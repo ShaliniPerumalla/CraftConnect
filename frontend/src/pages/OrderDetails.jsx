@@ -61,13 +61,22 @@ const orders = [
 export default function OrderDetails() {
   const { id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   // URL view parameter determines what renders ("details" vs "track")
-  const activeTab = searchParams.get("view") || "details"; 
+  const activeTab = searchParams.get("view") || "details";
 
-  const order = orders.find((item) => item.id === id);
+  // Flexible ID lookup: normalizes ORD-1001 to CC-1001 and provides fallback
+  const normalizedSearchId = id ? id.toUpperCase().replace("ORD-", "CC-") : "";
+  const order =
+    orders.find(
+      (item) =>
+        item.id.toUpperCase() === id?.toUpperCase() ||
+        item.id === normalizedSearchId
+    ) || orders[0];
 
-  const [currentStatus, setCurrentStatus] = useState(order?.status || "DESIGN");
+  const [currentStatus, setCurrentStatus] = useState(
+    order?.status || "DESIGN"
+  );
   const [designVersion, setDesignVersion] = useState(1);
 
   if (!order) {
@@ -78,9 +87,11 @@ export default function OrderDetails() {
           <div className="bg-white border border-border rounded-3xl p-10">
             <ShoppingBag size={28} className="mx-auto text-amber-dark mb-4" />
             <h1 className="font-display text-3xl">Order not found</h1>
-            <p className="text-ink-soft mt-3">We couldn't find an order with this order number.</p>
+            <p className="text-ink-soft mt-3">
+              We couldn't find an order with this order number.
+            </p>
             <Link
-              to="/orders"
+              to="/customer-profile"
               className="inline-flex items-center gap-2 mt-6 px-6 py-3 rounded-full bg-ink text-cream text-sm font-medium hover:bg-amber-dark transition-colors"
             >
               <ArrowLeft size={16} />
@@ -113,7 +124,7 @@ export default function OrderDetails() {
         <section className="border-b border-border bg-white">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <Link
-              to="/orders"
+              to="/customer-profile"
               className="inline-flex items-center gap-2 text-sm text-ink-soft hover:text-amber-dark transition-colors mb-4"
             >
               <ArrowLeft size={16} />
@@ -126,7 +137,9 @@ export default function OrderDetails() {
                   Order Management
                 </p>
                 <div className="flex items-center gap-3 mt-1">
-                  <h1 className="font-display text-3xl sm:text-4xl">#{order.id}</h1>
+                  <h1 className="font-display text-3xl sm:text-4xl">
+                    #{order.id}
+                  </h1>
                   <span className="px-3 py-1.5 rounded-full text-xs font-semibold bg-amber/15 text-amber-dark border border-amber/30">
                     {currentStatus}
                   </span>
@@ -134,7 +147,7 @@ export default function OrderDetails() {
               </div>
 
               {/* View Controls */}
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-3">
                 <div className="flex bg-gray-100 p-1 rounded-xl border border-border">
                   <button
                     onClick={() => setSearchParams({ view: "details" })}
@@ -159,21 +172,6 @@ export default function OrderDetails() {
                     Track Order
                   </button>
                 </div>
-
-                {/* Developer Demo Controls */}
-                {activeTab === "track" && (
-                  <select
-                    value={currentStatus}
-                    onChange={(e) => setCurrentStatus(e.target.value)}
-                    className="p-2 border border-border rounded-xl text-xs bg-white font-medium"
-                  >
-                    <option value="ACCEPTED">Stage 1: Quotation Accepted</option>
-                    <option value="DESIGN">Stage 2: Design Phase</option>
-                    <option value="PRODUCTION">Stage 3: In Production</option>
-                    <option value="DELIVERY">Stage 4: Out for Delivery</option>
-                    <option value="COMPLETED">Stage 5: Order Completed</option>
-                  </select>
-                )}
               </div>
             </div>
           </div>
@@ -183,7 +181,6 @@ export default function OrderDetails() {
         {activeTab === "details" && (
           <section className="py-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid md:grid-cols-3 gap-6">
-              
               {/* Product Information Card */}
               <div className="md:col-span-2 bg-white border border-border rounded-3xl p-6 sm:p-8">
                 <h3 className="text-xs uppercase tracking-[0.18em] text-forest font-semibold mb-6">
@@ -197,8 +194,10 @@ export default function OrderDetails() {
                   />
                   <div className="flex-1">
                     <h2 className="font-display text-2xl">{order.craftName}</h2>
-                    <p className="text-sm text-ink-soft mt-1">Creator: {order.creator}</p>
-                    
+                    <p className="text-sm text-ink-soft mt-1">
+                      Creator: {order.creator}
+                    </p>
+
                     <div className="mt-6 space-y-2 text-sm border-t border-border pt-4">
                       <div className="flex justify-between">
                         <span className="text-ink-soft">Unit Price</span>
@@ -210,7 +209,9 @@ export default function OrderDetails() {
                       </div>
                       <div className="flex justify-between font-bold text-base pt-2 border-t border-border">
                         <span>Total Paid</span>
-                        <span className="text-amber-dark">₹{total.toLocaleString("en-IN")}</span>
+                        <span className="text-amber-dark">
+                          ₹{total.toLocaleString("en-IN")}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -226,14 +227,15 @@ export default function OrderDetails() {
                   <h3 className="text-xs uppercase tracking-[0.15em] text-ink-soft font-semibold">
                     Delivery Address
                   </h3>
-                  <p className="font-medium mt-2 text-sm leading-relaxed">{order.address}</p>
+                  <p className="font-medium mt-2 text-sm leading-relaxed">
+                    {order.address}
+                  </p>
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-border text-xs text-ink-soft">
                   Order Date: {order.date}
                 </div>
               </div>
-
             </div>
           </section>
         )}
@@ -241,7 +243,6 @@ export default function OrderDetails() {
         {/* ================= MODE 2: TRACK ORDER LIFECYCLE ONLY ================= */}
         {activeTab === "track" && (
           <section className="py-8 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-            
             {/* Visual Lifecycle Progress Timeline */}
             <OrderTimeline currentStatus={currentStatus} />
 
@@ -254,18 +255,20 @@ export default function OrderDetails() {
               />
             )}
 
-            {currentStatus === "PRODUCTION" && (
-              <ProductionTracker />
-            )}
+            {currentStatus === "PRODUCTION" && <ProductionTracker />}
 
-            {(currentStatus === "DELIVERY" || currentStatus === "COMPLETED") && (
+            {(currentStatus === "DELIVERY" ||
+              currentStatus === "COMPLETED") && (
               <DeliveryTracking
-                status={currentStatus === "COMPLETED" ? "Delivered" : "Out for Delivery"}
+                status={
+                  currentStatus === "COMPLETED"
+                    ? "Delivered"
+                    : "Out for Delivery"
+                }
               />
             )}
           </section>
         )}
-
       </main>
 
       <Footer />

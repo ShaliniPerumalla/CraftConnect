@@ -54,10 +54,6 @@ export default function Navbar() {
       label: "Custom Order",
       path: "/requirements",
     },
-    {
-      label: "Orders",
-      path: "/orders",
-    },
   ];
 
   function closeMobileMenu() {
