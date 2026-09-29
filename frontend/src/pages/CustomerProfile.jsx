@@ -25,6 +25,7 @@ import Footer from "../components/Footer";
 import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
 import { useOrders } from "../context/OrdersContext";
+import { useRequirements } from "../context/RequirementsContext";
 
 const PROFILE_STORAGE_KEY = "craftconnect_customer_profile";
 
@@ -51,6 +52,8 @@ export default function CustomerProfile() {
   const ordersContext = useOrders();
 
   const orders = ordersContext?.orders || [];
+
+  const { requirements = [] } = useRequirements();
 
   // ======================================================
   // PROFILE STATE
@@ -448,6 +451,36 @@ export default function CustomerProfile() {
 
           </div>
 
+        </div>
+
+        {/* ==================================================
+            CUSTOM REQUIREMENTS QUICK BANNER (MEMBER 3)
+        ================================================== */}
+        <div className="mb-8 bg-gradient-to-r from-amber/15 via-white to-forest/10 border border-border rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber/20 text-amber-dark flex items-center justify-center shrink-0">
+              <Sparkles size={22} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-display text-lg text-ink">My Custom Requirements</h3>
+                <span className="px-2 py-0.5 rounded-full bg-amber text-ink text-[11px] font-bold">
+                  {requirements.length} Active
+                </span>
+              </div>
+              <p className="text-xs text-ink-soft mt-0.5">
+                Track custom order requirements, check received creator quotations, and compare offers.
+              </p>
+            </div>
+          </div>
+
+          <Link
+            to="/requirements?tab=dashboard"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-ink text-cream text-xs font-semibold hover:bg-amber-dark transition-colors shrink-0"
+          >
+            <span>View Requirements & Quotes</span>
+            <ChevronRight size={14} />
+          </Link>
         </div>
 
         {/* ==================================================
