@@ -1,5 +1,4 @@
 // src/pages/OrderDetails.jsx
-
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -9,6 +8,8 @@ import {
   Package,
   ShoppingBag,
   Truck,
+  Star,
+  AlertTriangle,
 } from "lucide-react";
 
 import Navbar from "../components/Navbar";
@@ -21,6 +22,7 @@ const orders = [
     id: "CC-1001",
     craftName: "Handmade Ceramic Vase",
     creator: "Ananya Ceramics",
+    creatorId: "c5",
     price: 1499,
     quantity: 1,
     date: "12 Aug 2026",
@@ -33,6 +35,7 @@ const orders = [
     id: "CC-1002",
     craftName: "Handcrafted Wooden Bowl",
     creator: "Arjun Woodworks",
+    creatorId: "c6",
     price: 899,
     quantity: 2,
     date: "10 Aug 2026",
@@ -45,6 +48,7 @@ const orders = [
     id: "CC-1003",
     craftName: "Handmade Silver Earrings",
     creator: "Meera Jewellery",
+    creatorId: "c7",
     price: 2199,
     quantity: 1,
     date: "08 Aug 2026",
@@ -218,8 +222,10 @@ export default function OrderDetails() {
         <section className="py-10 sm:py-14">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-8">
+
               {/* Product details */}
               <div className="space-y-6">
+
                 <div className="bg-white border border-border rounded-3xl p-6 sm:p-8">
                   <p className="text-xs uppercase tracking-[0.18em] text-forest font-semibold">
                     Your handmade piece
@@ -278,6 +284,77 @@ export default function OrderDetails() {
                   </div>
                 </div>
 
+                {/* Review / Complaint actions */}
+                <div className="bg-white border border-border rounded-3xl p-6 sm:p-8">
+                  <p className="text-xs uppercase tracking-[0.18em] text-forest font-semibold">
+                    Need help?
+                  </p>
+
+                  <h2 className="font-display text-2xl mt-2">
+                    {order.status === "Delivered"
+                      ? "How was your experience?"
+                      : "Something not right?"}
+                  </h2>
+
+                  <p className="text-sm text-ink-soft mt-2 leading-relaxed">
+                    You can share your experience with the creator
+                    or report an issue with this order.
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row gap-3 mt-6">
+
+                    {/* REVIEW BUTTON */}
+                    {order.status === "Delivered" && (
+                      <Link
+                        to={`/creator/${order.creatorId}`}
+                        className="
+                          inline-flex
+                          items-center
+                          justify-center
+                          gap-2
+                          px-5
+                          py-3
+                          rounded-full
+                          bg-ink
+                          text-cream
+                          text-sm
+                          font-medium
+                          hover:bg-amber-dark
+                          transition-colors
+                        "
+                      >
+                        <Star size={16} />
+                        Rate this creator
+                      </Link>
+                    )}
+
+                    {/* COMPLAINT BUTTON */}
+                    <Link
+                      to={`/complaints?order=${order.id}`}
+                      className="
+                        inline-flex
+                        items-center
+                        justify-center
+                        gap-2
+                        px-5
+                        py-3
+                        rounded-full
+                        border
+                        border-border-dark
+                        text-ink
+                        text-sm
+                        font-medium
+                        hover:bg-cream
+                        transition-colors
+                      "
+                    >
+                      <AlertTriangle size={16} />
+                      Report an issue
+                    </Link>
+
+                  </div>
+                </div>
+
                 {/* Delivery address */}
                 <div className="bg-white border border-border rounded-3xl p-6 sm:p-8">
                   <div className="flex items-center gap-3">
@@ -299,6 +376,7 @@ export default function OrderDetails() {
                     </div>
                   </div>
                 </div>
+
               </div>
 
               {/* Tracking */}
@@ -314,7 +392,8 @@ export default function OrderDetails() {
                 <div className="mt-8">
                   {trackingSteps.map((step, index) => {
                     const completed = index <= currentStep;
-                    const isLast = index === trackingSteps.length - 1;
+                    const isLast =
+                      index === trackingSteps.length - 1;
 
                     return (
                       <div
@@ -396,6 +475,7 @@ export default function OrderDetails() {
                   </p>
                 </div>
               </div>
+
             </div>
           </div>
         </section>
@@ -405,4 +485,3 @@ export default function OrderDetails() {
     </div>
   );
 }
-
