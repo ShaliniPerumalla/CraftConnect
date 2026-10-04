@@ -16,41 +16,6 @@ import Footer from "../components/Footer";
 
 // Temporary order data for the frontend.
 // Later this can be replaced with real backend/database data.
-const orders = [
-  {
-    id: "CC-1001",
-    craftName: "Handmade Ceramic Vase",
-    creator: "Ananya Ceramics",
-    price: 1499,
-    quantity: 1,
-    date: "12 Aug 2026",
-    status: "Delivered",
-    image:
-      "https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=700&auto=format&fit=crop",
-  },
-  {
-    id: "CC-1002",
-    craftName: "Handcrafted Wooden Bowl",
-    creator: "Arjun Woodworks",
-    price: 899,
-    quantity: 2,
-    date: "10 Aug 2026",
-    status: "Shipped",
-    image:
-      "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=700&auto=format&fit=crop",
-  },
-  {
-    id: "CC-1003",
-    craftName: "Handmade Silver Earrings",
-    creator: "Meera Jewellery",
-    price: 2199,
-    quantity: 1,
-    date: "08 Aug 2026",
-    status: "Processing",
-    image:
-      "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=700&auto=format&fit=crop",
-  },
-];
 
 // Return the correct icon for each order status.
 function StatusIcon({ status }) {

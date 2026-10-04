@@ -11,7 +11,12 @@ import {
 
 const notificationIcons = {
   order: ShoppingBag,
+  quotation: ShoppingBag,
   custom: Sparkles,
+  design: Palette,
+  production: Sparkles,
+  delivery: ShoppingBag,
+  delivered: Check,
   craft: Palette,
   wishlist: Heart,
   system: Bell,
@@ -19,7 +24,12 @@ const notificationIcons = {
 
 const notificationLabels = {
   order: "Order",
+  quotation: "Quotation",
   custom: "Custom",
+  design: "Design",
+  production: "Production",
+  delivery: "Delivery",
+  delivered: "Delivered",
   craft: "Craft",
   wishlist: "Wishlist",
   system: "Update",

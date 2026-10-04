@@ -17,6 +17,11 @@ import { WishlistProvider } from "./context/WishlistContext";
 import { OrdersProvider } from "./context/OrdersContext";
 import { NotificationProvider } from "./context/NotificationContext";
 import { RequirementsProvider } from "./context/RequirementsContext";
+import { ReviewProvider } from "./context/ReviewContext";
+import Complaints from "./pages/Complaints";
+import { ComplaintProvider } from "./context/ComplaintContext";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminComplaints from "./pages/AdminComplaints";
 
 // ======================================================
 // MAIN PAGES
@@ -71,6 +76,7 @@ import Orders from "./pages/Orders";
 import OrderDetails from "./pages/OrderDetails";
 import CustomerProfile from "./pages/CustomerProfile";
 import Notifications from "./pages/Notifications";
+import Chat from "./pages/chat";
 
 // ======================================================
 // SCROLL TO TOP
@@ -96,13 +102,15 @@ function ScrollToTop() {
 
 export default function App() {
   return (
+    
+    <ReviewProvider>
     <BrowserRouter>
       <NotificationProvider>
         <OrdersProvider>
           <WishlistProvider>
             <CartProvider>
               <CraftsProvider>
-                <RequirementsProvider>
+               <ComplaintProvider>                <RequirementsProvider>
 
                   <ScrollToTop />
 
@@ -110,10 +118,26 @@ export default function App() {
 
                   {/* ================= MAIN ================= */}
 
-                  <Route path="/" element={<Home />} />
-                  <Route path="/explore" element={<Explore />} />
-                  <Route path="/categories" element={<Categories />} />
-                  <Route path="/creators" element={<Creators />} />
+                  <Route
+                    path="/"
+                    element={<Home />}
+                  />
+
+                  <Route
+                    path="/explore"
+                    element={<Explore />}
+                  />
+
+                  <Route
+                    path="/categories"
+                    element={<Categories />}
+                  />
+
+                  <Route
+                    path="/creators"
+                    element={<Creators />}
+                  />
+
 
                   {/* ================= CRAFT ================= */}
 
@@ -126,6 +150,7 @@ export default function App() {
                     path="/wishlist"
                     element={<Wishlist />}
                   />
+
 
                   {/* ================= CREATOR ================= */}
 
@@ -159,6 +184,7 @@ export default function App() {
                     element={<CreatorOrders />}
                   />
 
+
                   {/* ================= CART ================= */}
 
                   <Route
@@ -175,6 +201,7 @@ export default function App() {
                     path="/order-success"
                     element={<OrderSuccess />}
                   />
+
 
                   {/* ================= AUTH ================= */}
 
@@ -198,12 +225,22 @@ export default function App() {
                     element={<ResetPassword />}
                   />
 
+
                   {/* ================= CUSTOM ORDER ================= */}
 
                   <Route
                     path="/requirements"
                     element={<Requirements />}
                   />
+
+
+                  {/* ================= CHAT ================= */}
+
+                  <Route
+                    path="/chat"
+                    element={<Chat />}
+                  />
+
 
                   {/* ================= ORDERS ================= */}
 
@@ -217,6 +254,7 @@ export default function App() {
                     element={<OrderDetails />}
                   />
 
+
                   {/* ================= PROFILE ================= */}
 
                   <Route
@@ -229,6 +267,7 @@ export default function App() {
                     element={<CustomerProfile />}
                   />
 
+
                   {/* ================= NOTIFICATIONS ================= */}
 
                   <Route
@@ -236,14 +275,34 @@ export default function App() {
                     element={<Notifications />}
                   />
 
+                  <Route
+  path="/complaints"
+  element={<Complaints />}
+/>
+
+<Route
+  path="/admin"
+  element={<AdminDashboard />}
+/>
+
+<Route
+  path="/admin/complaints"
+  element={<AdminComplaints />}
+/>
+
                 </Routes>
 
                 </RequirementsProvider>
+                
+              </ComplaintProvider>
               </CraftsProvider>
             </CartProvider>
           </WishlistProvider>
         </OrdersProvider>
       </NotificationProvider>
     </BrowserRouter>
+  </ReviewProvider>
+
+
   );
 }

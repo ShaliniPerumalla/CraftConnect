@@ -23,52 +23,51 @@ export default function Notifications() {
   // ======================================================
 
   const filteredNotifications = useMemo(() => {
-    switch (filter) {
-      case "unread":
-        return notifications.filter(
-          (notification) => !notification.read
-        );
+  switch (filter) {
+    case "unread":
+      return notifications.filter(
+        (notification) => !notification.read
+      );
 
-      case "orders":
-        return notifications.filter(
-          (notification) => notification.type === "order"
-        );
+    case "orders":
+      return notifications.filter((notification) =>
+        ["quotation", "production", "delivery", "delivered"].includes(
+          notification.type
+        )
+      );
 
-      case "crafts":
-        return notifications.filter(
-          (notification) =>
-            notification.type === "craft" ||
-            notification.type === "wishlist"
-        );
+    case "designs":
+      return notifications.filter(
+        (notification) => notification.type === "design"
+      );
 
-      case "all":
-      default:
-        return notifications;
-    }
-  }, [notifications, filter]);
-
+    case "all":
+    default:
+      return notifications;
+  }
+}, [notifications, filter]);
   // ======================================================
   // FILTER BUTTONS
   // ======================================================
 
   const filters = [
-    {
-      id: "all",
-      label: "All",
-    },
-    {
-      id: "unread",
-      label: "Unread",
-    },
-    {
-      id: "orders",
-      label: "Orders",
-    },
-    {
-      id: "crafts",
-      label: "Crafts",
-    },
-  ];
+  {
+    id: "all",
+    label: "All",
+  },
+  {
+    id: "unread",
+    label: "Unread",
+  },
+  {
+    id: "orders",
+    label: "Orders",
+  },
+  {
+    id: "designs",
+    label: "Designs",
+  },
+];
 
   return (
     <div className="min-h-screen bg-cream font-body text-ink">
