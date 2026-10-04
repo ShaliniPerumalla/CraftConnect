@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useChat } from "../context/ChatContext";
-import "./Chat.css";
+import "./chat.css";
 
 function Chat() {
   const {

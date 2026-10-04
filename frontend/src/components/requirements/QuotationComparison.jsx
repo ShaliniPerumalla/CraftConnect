@@ -1,419 +1,353 @@
 // src/components/requirements/QuotationComparison.jsx
 
 import { useState } from "react";
-import { Star, Clock, Check, Eye, X, ArrowLeft, ShieldCheck, Sparkles, AlertCircle } from "lucide-react";
-import { useRequirements } from "../../context/RequirementsContext";
+import {
+  Sparkles,
+  Check,
+  Star,
+  Clock,
+  Truck,
+  Eye,
+  ArrowRight,
+  ShieldCheck,
+  CheckCircle2,
+  AlertCircle,
+  X,
+  FileCheck,
+} from "lucide-react";
+
+import QuotationCard from "./QuotationCard";
 
 export default function QuotationComparison({
   requirement,
-  onBack,
-  onQuotationAccepted,
+  quotations = [],
+  onSelectQuotation,
+  onViewQuotation,
+  onClose,
 }) {
-  const { acceptQuotation } = useRequirements();
-  const [selectedQuoteDetail, setSelectedQuoteDetail] = useState(null);
-  const [confirmModalQuote, setConfirmModalQuote] = useState(null);
+  const [selectedQuoteForConfirm, setSelectedQuoteForConfirm] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [confirmedSuccess, setConfirmedSuccess] = useState(false);
 
-  if (!requirement || !requirement.quotations || requirement.quotations.length === 0) {
+  if (!quotations || quotations.length === 0) {
     return (
-      <div className="bg-white border border-border rounded-3xl p-10 text-center">
-        <AlertCircle size={36} className="mx-auto text-amber-dark mb-3" />
-        <h3 className="font-display text-2xl text-ink">No Quotations Yet</h3>
-        <p className="text-sm text-ink-soft mt-2">
-          Waiting for creators to submit custom quotations for #{requirement?.id}.
+      <div className="bg-white border border-border rounded-3xl p-8 text-center">
+        <Clock size={36} className="text-amber-dark mx-auto mb-3" />
+        <h3 className="font-display text-xl font-semibold text-ink">
+          Waiting for Quotations
+        </h3>
+        <p className="text-xs text-ink-soft max-w-md mx-auto mt-2">
+          Your custom requirement #{requirement?.id} is live! Creators are reviewing your design specifications and will submit tailored quotations shortly.
         </p>
-        {onBack && (
-          <button
-            type="button"
-            onClick={onBack}
-            className="mt-6 px-6 py-2.5 rounded-full border border-border text-sm font-medium hover:border-amber transition-colors"
-          >
-            Back to Requirements
-          </button>
-        )}
       </div>
     );
   }
 
-  const { quotations } = requirement;
+  // Find lowest price, fastest time, highest rating
+  const sortedByPrice = [...quotations].sort((a, b) => a.price - b.price);
+  const bestValueId = sortedByPrice[0]?.id;
 
-  // Find lowest price and fastest production time for badges
-  const minPrice = Math.min(...quotations.map((q) => Number(q.price)));
-  const minDays = Math.min(...quotations.map((q) => Number(q.productionDays)));
+  const getDays = (str) => parseInt(str) || 999;
+  const sortedByDays = [...quotations].sort(
+    (a, b) => getDays(a.productionTime) - getDays(b.productionTime)
+  );
+  const fastestId = sortedByDays[0]?.id;
 
-  const handleSelect = (quote) => {
-    setConfirmModalQuote(quote);
+  const sortedByRating = [...quotations].sort(
+    (a, b) => (b.creator?.rating || 0) - (a.creator?.rating || 0)
+  );
+  const topRatedId = sortedByRating[0]?.id;
+
+  const handleSelectClick = (quote) => {
+    setSelectedQuoteForConfirm(quote);
   };
 
-  const confirmAcceptance = () => {
-    if (!confirmModalQuote) return;
-    acceptQuotation(requirement.id, confirmModalQuote.id);
-    if (onQuotationAccepted) {
-      onQuotationAccepted(confirmModalQuote);
-    }
-    setConfirmModalQuote(null);
+  const handleConfirmAcceptance = () => {
+    if (!selectedQuoteForConfirm) return;
+    setIsProcessing(true);
+
+    setTimeout(() => {
+      if (onSelectQuotation) {
+        onSelectQuotation(selectedQuoteForConfirm.id);
+      }
+      setIsProcessing(false);
+      setConfirmedSuccess(true);
+    }, 600);
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b border-border">
+    <div className="space-y-6">
+      {/* Header Banner */}
+      <div className="bg-white border border-border rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          {onBack && (
-            <button
-              type="button"
-              onClick={onBack}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-soft hover:text-amber-dark transition-colors mb-2"
-            >
-              <ArrowLeft size={14} /> Back to Requirements
-            </button>
-          )}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-amber/10 text-amber-dark">
-              #{requirement.id}
-            </span>
-            <span className="text-xs text-ink-soft uppercase tracking-wider">
-              {requirement.category}
-            </span>
-          </div>
-          <h2 className="font-display text-3xl text-ink mt-1">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-forest/10 text-forest text-xs font-semibold uppercase tracking-wider mb-2">
+            <Sparkles size={12} />
             Customer Quotation Comparison
+          </div>
+          <h2 className="font-display text-2xl sm:text-3xl font-semibold text-ink">
+            Compare Quotations for #{requirement?.id}
           </h2>
-          <p className="text-sm text-ink-soft mt-1">
-            Compare offers received for "{requirement.title}" and select the best creator for your custom order.
+          <p className="text-xs sm:text-sm text-ink-soft mt-1">
+            {requirement?.title} • Target Budget: ₹
+            {Number(requirement?.budget || 0).toLocaleString("en-IN")} • Location: {requirement?.deliveryLocation}
           </p>
         </div>
 
-        <div className="bg-cream border border-border rounded-2xl px-5 py-3 text-right">
-          <span className="text-xs text-ink-soft block">Target Budget</span>
-          <span className="font-display text-xl text-ink font-bold">
-            ₹{Number(requirement.budget).toLocaleString("en-IN")}
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-cream border border-border text-ink">
+            {quotations.length} Quotation{quotations.length > 1 ? "s" : ""} Available
           </span>
-        </div>
-      </div>
-
-      {/* Side-by-side Table/Cards (Desktop Comparison Layout) */}
-      <div className="overflow-x-auto pb-4">
-        <div className="min-w-[760px] grid grid-cols-3 gap-6">
-          {quotations.map((quote, index) => {
-            const isLowestPrice = Number(quote.price) === minPrice;
-            const isFastest = Number(quote.productionDays) === minDays;
-            const isAccepted =
-              quote.status === "Accepted" ||
-              requirement.acceptedQuotation?.id === quote.id;
-
-            return (
-              <div
-                key={quote.id}
-                className={`
-                  bg-white
-                  border
-                  rounded-3xl
-                  p-6
-                  flex
-                  flex-col
-                  justify-between
-                  relative
-                  transition-all
-                  shadow-sm
-                  ${
-                    isAccepted
-                      ? "border-forest ring-2 ring-forest/30 bg-forest/5"
-                      : "border-border hover:border-amber/50 hover:shadow-md"
-                  }
-                `}
-              >
-                {/* Header Badge */}
-                <div className="flex items-center justify-between gap-2 mb-4">
-                  <span className="font-display text-sm font-bold text-ink">
-                    Quotation {index + 1}
-                  </span>
-                  {isLowestPrice && (
-                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-forest/15 text-forest">
-                      Best Price
-                    </span>
-                  )}
-                  {isFastest && !isLowestPrice && (
-                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber/15 text-amber-dark">
-                      Fastest
-                    </span>
-                  )}
-                  {isAccepted && (
-                    <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-forest text-white">
-                      Selected
-                    </span>
-                  )}
-                </div>
-
-                {/* Creator Header */}
-                <div className="flex items-center gap-3 pb-4 border-b border-border">
-                  <img
-                    src={quote.creatorAvatar || "https://i.pravatar.cc/150?img=32"}
-                    alt={quote.creatorName}
-                    className="w-11 h-11 rounded-2xl object-cover border border-border"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <h4 className="font-medium text-sm text-ink truncate">
-                      {quote.creatorName}
-                    </h4>
-                    <p className="text-[11px] text-ink-soft truncate">
-                      {quote.creatorSpecialty}
-                    </p>
-                  </div>
-                </div>
-
-                {/* The 3 Core Comparison Metrics (Price, Days, Rating) */}
-                <div className="py-5 space-y-4 border-b border-border">
-                  {/* Price */}
-                  <div className="text-center bg-cream/50 rounded-2xl p-3 border border-border/50">
-                    <span className="text-[11px] text-ink-muted uppercase tracking-wider block font-medium">
-                      Price
-                    </span>
-                    <span className="font-display text-3xl font-bold text-ink block mt-0.5">
-                      ₹{Number(quote.price).toLocaleString("en-IN")}
-                    </span>
-                    <span className="text-[11px] text-ink-soft block mt-0.5">
-                      + ₹{Number(quote.deliveryCharge || 0)} Delivery
-                    </span>
-                  </div>
-
-                  {/* Production Days */}
-                  <div className="flex items-center justify-between px-2 text-xs">
-                    <span className="text-ink-soft flex items-center gap-1">
-                      <Clock size={14} className="text-amber-dark" /> Production
-                    </span>
-                    <span className="font-bold text-ink font-display text-sm">
-                      {quote.productionDays} Days
-                    </span>
-                  </div>
-
-                  {/* Rating */}
-                  <div className="flex items-center justify-between px-2 text-xs">
-                    <span className="text-ink-soft flex items-center gap-1">
-                      <Star size={14} className="fill-amber-dark text-amber-dark" /> Rating
-                    </span>
-                    <span className="font-bold text-amber-dark font-display text-sm">
-                      ⭐ {Number(quote.creatorRating || 4.8).toFixed(1)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Materials & Message Snippet */}
-                <div className="py-4 space-y-2 text-xs text-ink-soft">
-                  <p className="line-clamp-2">
-                    <strong className="text-ink font-semibold">Material: </strong>
-                    {quote.materials}
-                  </p>
-                  <p className="italic line-clamp-2">
-                    "{quote.message}"
-                  </p>
-                </div>
-
-                {/* Actions: [View] and [Select] */}
-                <div className="pt-4 border-t border-border space-y-2">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedQuoteDetail(quote)}
-                    className="
-                      w-full
-                      py-2.5
-                      rounded-xl
-                      border
-                      border-border
-                      bg-cream/40
-                      text-xs
-                      font-medium
-                      text-ink
-                      hover:border-amber
-                      hover:text-amber-dark
-                      hover:bg-cream
-                      transition-all
-                      flex
-                      items-center
-                      justify-center
-                      gap-1.5
-                    "
-                  >
-                    <Eye size={13} />
-                    <span>View Details</span>
-                  </button>
-
-                  {isAccepted ? (
-                    <div className="w-full py-2.5 text-center text-xs font-bold text-forest uppercase tracking-wider flex items-center justify-center gap-1">
-                      <Check size={14} /> Selected
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleSelect(quote)}
-                      className="
-                        w-full
-                        py-2.5
-                        rounded-xl
-                        bg-ink
-                        text-cream
-                        text-xs
-                        font-semibold
-                        hover:bg-amber-dark
-                        transition-all
-                        shadow-sm
-                        cursor-pointer
-                        flex
-                        items-center
-                        justify-center
-                        gap-1.5
-                      "
-                    >
-                      <Check size={14} />
-                      <span>Select This Offer</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Details Modal */}
-      {selectedQuoteDetail && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="relative w-full max-w-lg bg-white border border-border rounded-[2rem] p-6 sm:p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+          {onClose && (
             <button
               type="button"
-              onClick={() => setSelectedQuoteDetail(null)}
-              className="absolute top-5 right-5 w-8 h-8 rounded-full bg-cream border border-border flex items-center justify-center text-ink-soft hover:text-ink"
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-cream border border-border text-ink-soft hover:text-ink transition-colors"
+              title="Close Comparison"
+            >
+              <X size={18} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Responsive Quotation Columns (Side by Side comparison) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {quotations.map((quote, index) => {
+          const isSelected =
+            quote.status === "Accepted" ||
+            requirement?.acceptedQuotationId === quote.id;
+
+          return (
+            <div key={quote.id} className="flex flex-col">
+              <div className="text-center pb-2">
+                <span className="text-xs font-mono font-bold uppercase tracking-wider text-ink-soft">
+                  Quotation {index + 1}
+                </span>
+              </div>
+              <QuotationCard
+                quotation={quote}
+                isSelected={isSelected}
+                isBestValue={quote.id === bestValueId && quotations.length > 1}
+                isFastest={quote.id === fastestId && quotations.length > 1}
+                isTopRated={quote.id === topRatedId && quotations.length > 1}
+                onView={() => onViewQuotation && onViewQuotation(quote)}
+                onSelect={() => handleSelectClick(quote)}
+                showSelectButton={!isSelected}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Side-by-Side Comparison Matrix Table */}
+      <div className="bg-white border border-border rounded-3xl p-6 shadow-xs overflow-hidden">
+        <h3 className="font-display text-lg font-semibold text-ink mb-4">
+          Detailed Comparison Matrix
+        </h3>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-border bg-cream/50">
+                <th className="p-3.5 font-semibold text-ink-soft">Attribute</th>
+                {quotations.map((q, idx) => (
+                  <th key={q.id} className="p-3.5 font-bold text-ink">
+                    Quotation {idx + 1} ({q.creator?.name?.split(" ")[0]})
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/60">
+              <tr>
+                <td className="p-3.5 font-medium text-ink-soft">Quoted Price</td>
+                {quotations.map((q) => (
+                  <td key={q.id} className="p-3.5 font-display text-base font-bold text-ink">
+                    ₹{Number(q.price).toLocaleString("en-IN")}
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td className="p-3.5 font-medium text-ink-soft">Production Time</td>
+                {quotations.map((q) => (
+                  <td key={q.id} className="p-3.5 font-semibold text-ink">
+                    {q.productionTime}
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td className="p-3.5 font-medium text-ink-soft">Artisan Rating</td>
+                {quotations.map((q) => (
+                  <td key={q.id} className="p-3.5">
+                    <div className="inline-flex items-center gap-1.5 font-semibold text-amber-dark text-xs">
+                      <Star size={13} className="fill-amber text-amber shrink-0" />
+                      <span>{q.creator?.rating || "4.8"}</span>
+                    </div>
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td className="p-3.5 font-medium text-ink-soft">Delivery Charge</td>
+                {quotations.map((q) => (
+                  <td key={q.id} className="p-3.5 text-ink">
+                    ₹{q.deliveryCharge}
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td className="p-3.5 font-medium text-ink-soft">Materials</td>
+                {quotations.map((q) => (
+                  <td key={q.id} className="p-3.5 text-ink-soft max-w-[200px]">
+                    {q.materials}
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td className="p-3.5 font-medium text-ink-soft">Action</td>
+                {quotations.map((q) => {
+                  const isAccepted =
+                    q.status === "Accepted" ||
+                    requirement?.acceptedQuotationId === q.id;
+
+                  return (
+                    <td key={q.id} className="p-3.5">
+                      {isAccepted ? (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-forest text-white text-xs font-semibold">
+                          <Check size={12} /> Commissioned
+                        </span>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => onViewQuotation && onViewQuotation(q)}
+                            className="px-3 py-1.5 rounded-lg border border-border bg-white text-ink text-xs font-medium hover:bg-cream"
+                          >
+                            [View]
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectClick(q)}
+                            className="px-3 py-1.5 rounded-lg bg-ink text-cream hover:bg-forest text-xs font-semibold shadow-2xs"
+                          >
+                            [Select]
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Confirmation Modal when [Select] is clicked */}
+      {selectedQuoteForConfirm && !confirmedSuccess && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-border rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+            <button
+              type="button"
+              onClick={() => setSelectedQuoteForConfirm(null)}
+              className="absolute top-5 right-5 w-8 h-8 rounded-full bg-cream flex items-center justify-center text-ink-soft hover:text-ink"
             >
               <X size={16} />
             </button>
 
-            <div className="flex items-center gap-3 pb-4 border-b border-border">
-              <img
-                src={selectedQuoteDetail.creatorAvatar}
-                alt={selectedQuoteDetail.creatorName}
-                className="w-14 h-14 rounded-2xl object-cover"
-              />
-              <div>
-                <h3 className="font-display text-xl text-ink">
-                  {selectedQuoteDetail.creatorName}
-                </h3>
-                <p className="text-xs text-ink-soft">
-                  {selectedQuoteDetail.creatorSpecialty}
-                </p>
-                <div className="flex items-center gap-1 text-xs font-semibold text-amber-dark mt-1">
-                  <Star size={12} className="fill-amber-dark text-amber-dark" />
-                  {selectedQuoteDetail.creatorRating} Creator Rating
-                </div>
+            <div className="w-12 h-12 rounded-2xl bg-amber/10 flex items-center justify-center text-amber-dark mb-4">
+              <ShieldCheck size={24} />
+            </div>
+
+            <h3 className="font-display text-2xl font-bold text-ink">
+              Commission This Artisan?
+            </h3>
+            <p className="text-xs text-ink-soft mt-1">
+              You are selecting {selectedQuoteForConfirm.creator?.name}'s quotation for #{requirement?.id}.
+            </p>
+
+            <div className="bg-cream/60 rounded-2xl p-4 my-5 border border-border text-xs space-y-2">
+              <div className="flex justify-between">
+                <span className="text-ink-soft">Artisan:</span>
+                <span className="font-semibold text-ink">
+                  {selectedQuoteForConfirm.creator?.name} (⭐{selectedQuoteForConfirm.creator?.rating})
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-ink-soft">Quoted Craft Fee:</span>
+                <span className="font-semibold text-ink">
+                  ₹{Number(selectedQuoteForConfirm.price).toLocaleString("en-IN")}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-ink-soft">Delivery to {requirement?.deliveryLocation}:</span>
+                <span className="font-semibold text-ink">
+                  ₹{selectedQuoteForConfirm.deliveryCharge}
+                </span>
+              </div>
+              <div className="flex justify-between border-t border-border pt-2 text-sm">
+                <span className="font-bold text-ink">Total Commission:</span>
+                <span className="font-bold font-display text-ink text-base">
+                  ₹{Number(selectedQuoteForConfirm.totalPrice).toLocaleString("en-IN")}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-ink-soft">Production Turnaround:</span>
+                <span className="font-medium text-forest">
+                  {selectedQuoteForConfirm.productionTime}
+                </span>
               </div>
             </div>
 
-            <div className="py-4 space-y-3 text-xs">
-              <div className="bg-cream/60 p-3.5 rounded-2xl space-y-1.5">
-                <div className="flex justify-between">
-                  <span className="text-ink-soft">Proposed Price:</span>
-                  <span className="font-bold text-ink text-sm">
-                    ₹{Number(selectedQuoteDetail.price).toLocaleString("en-IN")}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-ink-soft">Production Time:</span>
-                  <span className="font-bold text-ink">
-                    {selectedQuoteDetail.productionDays} Days
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-ink-soft">Delivery Fee:</span>
-                  <span className="font-bold text-ink">
-                    ₹{Number(selectedQuoteDetail.deliveryCharge || 0).toLocaleString("en-IN")}
-                  </span>
-                </div>
-              </div>
+            <p className="text-[11px] text-ink-muted leading-relaxed mb-6">
+              🔒 <strong>Platform Escrow Protection:</strong> Your payment is held safely and only disbursed to the creator once the custom piece is crafted to your satisfaction.
+            </p>
 
-              <div>
-                <span className="font-semibold text-ink block mb-1">Materials:</span>
-                <p className="text-ink-soft bg-cream/40 p-2.5 rounded-xl border border-border">
-                  {selectedQuoteDetail.materials}
-                </p>
-              </div>
-
-              <div>
-                <span className="font-semibold text-ink block mb-1">Proposed Design:</span>
-                <p className="text-ink-soft bg-cream/40 p-2.5 rounded-xl border border-border">
-                  {selectedQuoteDetail.proposedDesign || "As discussed in requirement"}
-                </p>
-              </div>
-
-              <div>
-                <span className="font-semibold text-ink block mb-1">Creator Note:</span>
-                <p className="text-ink-soft italic bg-cream/40 p-2.5 rounded-xl border border-border">
-                  "{selectedQuoteDetail.message}"
-                </p>
-              </div>
-
-              {selectedQuoteDetail.terms && (
-                <div>
-                  <span className="font-semibold text-ink block mb-1">Terms:</span>
-                  <p className="text-ink-soft text-[11px]">
-                    {selectedQuoteDetail.terms}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="pt-4 border-t border-border flex items-center justify-end gap-3">
+            <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => setSelectedQuoteDetail(null)}
-                className="px-4 py-2 rounded-full border border-border text-xs font-medium"
+                onClick={() => setSelectedQuoteForConfirm(null)}
+                className="flex-1 py-3 rounded-full border border-border text-xs font-semibold hover:bg-cream transition-colors"
               >
-                Close
+                Go Back
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  const q = selectedQuoteDetail;
-                  setSelectedQuoteDetail(null);
-                  handleSelect(q);
-                }}
-                className="px-6 py-2 rounded-full bg-ink text-cream text-xs font-semibold hover:bg-amber-dark"
+                onClick={handleConfirmAcceptance}
+                disabled={isProcessing}
+                className="flex-1 py-3 rounded-full bg-forest text-white hover:bg-forest-dark text-xs font-semibold shadow-md transition-all flex items-center justify-center gap-1.5"
               >
-                Select This Quotation
+                {isProcessing ? "Commissioning..." : "Confirm & Commission"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Confirmation Modal */}
-      {confirmModalQuote && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="relative w-full max-w-md bg-white border border-border rounded-[2rem] p-6 sm:p-8 shadow-2xl text-center">
-            <div className="w-14 h-14 rounded-full bg-amber/15 text-amber-dark flex items-center justify-center mx-auto mb-4">
-              <Sparkles size={28} />
+      {/* Success Modal */}
+      {confirmedSuccess && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-border rounded-3xl max-w-md w-full p-8 text-center shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 rounded-full bg-forest/15 text-forest flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 size={36} />
             </div>
 
-            <h3 className="font-display text-2xl text-ink">
-              Confirm Creator Selection
+            <h3 className="font-display text-2xl font-bold text-ink">
+              Quotation Accepted!
             </h3>
-
-            <p className="text-sm text-ink-soft mt-2">
-              Are you sure you want to select <strong>{confirmModalQuote.creatorName}</strong>'s quotation of{" "}
-              <strong>₹{Number(confirmModalQuote.price).toLocaleString("en-IN")}</strong> for this project?
+            <p className="text-xs text-ink-soft mt-2 leading-relaxed">
+              Congratulations! {selectedQuoteForConfirm?.creator?.name} has been notified and will begin production of your custom piece. A tracked order has been added to your Orders dashboard.
             </p>
 
-            <div className="flex items-center justify-center gap-3 mt-6">
+            <div className="mt-6">
               <button
                 type="button"
-                onClick={() => setConfirmModalQuote(null)}
-                className="px-5 py-2.5 rounded-full border border-border text-xs font-medium text-ink hover:bg-cream"
+                onClick={() => {
+                  setConfirmedSuccess(false);
+                  setSelectedQuoteForConfirm(null);
+                  if (onClose) onClose();
+                }}
+                className="w-full py-3 rounded-full bg-ink text-cream hover:bg-amber-dark text-xs font-semibold shadow-md transition-colors"
               >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmAcceptance}
-                className="px-6 py-2.5 rounded-full bg-ink text-cream text-xs font-semibold hover:bg-forest transition-colors"
-              >
-                Confirm & Accept
+                Done
               </button>
             </div>
           </div>

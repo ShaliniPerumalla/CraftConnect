@@ -1,307 +1,217 @@
 // src/components/requirements/RequirementCard.jsx
 
-import { Calendar, MapPin, IndianRupee, MessageSquare, Clock, ArrowRight, CheckCircle2, ChevronRight, Eye } from "lucide-react";
+import {
+  MapPin,
+  Calendar,
+  IndianRupee,
+  Clock,
+  Sparkles,
+  ArrowRight,
+  Send,
+  Eye,
+  CheckCircle,
+  FileCheck,
+  AlertCircle,
+} from "lucide-react";
 
 export default function RequirementCard({
   requirement,
-  viewMode = "customer", // "customer" | "creator"
-  onView,
+  quotations = [],
+  viewRole = "customer", // "customer" or "creator"
+  onViewRequirement,
   onSendQuotation,
-  onCompare,
+  onCompareQuotations,
+  onSelectRequirement,
 }) {
-  const {
-    id,
-    title,
-    category,
-    description,
-    budget,
-    budgetMin,
-    budgetMax,
-    requiredDate,
-    location,
-    status,
-    quotations = [],
-    referenceImages = [],
-  } = requirement;
+  const quoteCount = quotations.length;
 
-  const getStatusBadge = (currentStatus) => {
-    switch (currentStatus) {
-      case "Waiting for Quotations":
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber/15 text-amber-dark border border-amber/30">
-            <Clock size={12} />
-            Waiting for Quotations
-          </span>
-        );
-      case "Quotations Received":
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-forest/15 text-forest-dark border border-forest/30">
-            <MessageSquare size={12} />
-            Quotations Received ({quotations.length})
-          </span>
-        );
-      case "Accepted":
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-forest text-cream">
-            <CheckCircle2 size={12} />
-            Quotation Accepted
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-ink/10 text-ink">
-            {currentStatus}
-          </span>
-        );
+  // Format delivery date
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "Flexible";
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    } catch {
+      return dateStr;
     }
   };
 
-  const budgetDisplay =
-    budgetMin && budgetMax && budgetMin !== budgetMax
-      ? `₹${budgetMin.toLocaleString("en-IN")}–₹${budgetMax.toLocaleString("en-IN")}`
-      : `₹${Number(budget || 0).toLocaleString("en-IN")}`;
+  // Status badge styling
+  const getStatusBadge = () => {
+    if (requirement.status === "Quotation Accepted") {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-forest/15 text-forest font-semibold text-xs border border-forest/30">
+          <CheckCircle size={12} />
+          Quotation Accepted
+        </span>
+      );
+    }
+    if (quoteCount > 0 || requirement.status === "Quotations Received") {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber/15 text-amber-dark font-semibold text-xs border border-amber/30 animate-pulse">
+          <Sparkles size={12} />
+          Quotations Received ({quoteCount})
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-ink/5 text-ink-soft font-semibold text-xs border border-border">
+        <Clock size={12} />
+        Waiting for Quotations
+      </span>
+    );
+  };
 
-  const formattedDate = requiredDate
-    ? new Date(requiredDate).toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "short",
-      })
-    : "Flexible";
+  const mainImage =
+    requirement.images && requirement.images.length > 0
+      ? requirement.images[0]
+      : "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=800&q=80";
 
   return (
-    <div className="bg-white border border-border rounded-3xl p-6 sm:p-7 shadow-[0_4px_25px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_35px_rgba(0,0,0,0.07)] hover:border-amber/40 transition-all flex flex-col justify-between group">
+    <div className="bg-white border border-border rounded-2xl p-5 sm:p-6 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between group">
       <div>
-        {/* Header: ID, Category & Status */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 mb-4">
+        {/* Top bar: ID & Status */}
+        <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-bold text-amber-dark bg-amber/10 px-2.5 py-1 rounded-lg">
-              #{id}
+            <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-cream border border-border text-ink">
+              #{requirement.id}
             </span>
-            <span className="text-xs uppercase tracking-wider text-ink-soft font-medium">
-              {category}
+            <span className="text-xs font-medium px-2.5 py-1 rounded-lg bg-cream-dark/60 text-ink-soft">
+              {requirement.category}
             </span>
           </div>
 
-          <div>{getStatusBadge(status)}</div>
+          <div>{getStatusBadge()}</div>
         </div>
 
-        {/* Title */}
-        <h3 className="font-display text-xl sm:text-2xl text-ink group-hover:text-amber-dark transition-colors line-clamp-1">
-          {title}
-        </h3>
-
-        {/* Description snippet */}
-        <p className="text-sm text-ink-soft mt-2 line-clamp-2 leading-relaxed">
-          {description}
-        </p>
-
-        {/* Image Preview strip if any */}
-        {referenceImages && referenceImages.length > 0 && (
-          <div className="flex items-center gap-2 mt-4 overflow-x-auto pb-1">
-            {referenceImages.slice(0, 3).map((img, i) => (
-              <img
-                key={i}
-                src={img}
-                alt="Reference"
-                className="w-14 h-14 rounded-xl object-cover border border-border shrink-0"
-              />
-            ))}
-            {referenceImages.length > 3 && (
-              <div className="w-14 h-14 rounded-xl bg-cream border border-border flex items-center justify-center text-xs font-semibold text-ink-soft shrink-0">
-                +{referenceImages.length - 3}
-              </div>
+        {/* Card Body: Image & Details */}
+        <div className="flex gap-4 mt-3">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-cream shrink-0 border border-border relative">
+            <img
+              src={mainImage}
+              alt={requirement.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            {requirement.images && requirement.images.length > 1 && (
+              <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/60 text-white text-[10px] font-medium backdrop-blur-xs">
+                +{requirement.images.length - 1}
+              </span>
             )}
           </div>
-        )}
 
-        {/* Key Metrics Grid */}
-        <div className="grid grid-cols-3 gap-2.5 py-4 my-4 border-y border-border/80 text-xs">
-          <div>
-            <span className="text-ink-muted block text-[11px]">Budget</span>
-            <span className="font-semibold text-ink mt-0.5 block">
-              {budgetDisplay}
+          <div className="flex-1 min-w-0">
+            <h3 className="font-display text-lg sm:text-xl font-semibold text-ink leading-snug line-clamp-1 group-hover:text-amber-dark transition-colors">
+              {requirement.title}
+            </h3>
+
+            {requirement.whatDoYouWant && (
+              <p className="text-xs font-medium text-amber-dark mt-0.5 line-clamp-1">
+                {requirement.whatDoYouWant}
+              </p>
+            )}
+
+            <p className="text-xs text-ink-soft mt-1.5 line-clamp-2 leading-relaxed">
+              {requirement.description}
+            </p>
+          </div>
+        </div>
+
+        {/* Meta Pills: Budget, Delivery, Location */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4 pt-4 border-t border-border/80 text-xs">
+          {/* Budget */}
+          <div className="bg-cream/50 rounded-xl p-2.5 border border-border/50">
+            <span className="text-[11px] text-ink-muted block font-medium">
+              Budget
+            </span>
+            <span className="font-semibold text-ink text-sm flex items-center gap-0.5 mt-0.5">
+              ₹
+              {requirement.budgetMin && requirement.budgetMax
+                ? `${requirement.budgetMin.toLocaleString("en-IN")}–₹${requirement.budgetMax.toLocaleString("en-IN")}`
+                : Number(requirement.budget).toLocaleString("en-IN")}
             </span>
           </div>
 
-          <div>
-            <span className="text-ink-muted block text-[11px]">Delivery</span>
-            <span className="font-semibold text-ink mt-0.5 block flex items-center gap-1">
-              <Calendar size={12} className="text-amber-dark" />
-              {formattedDate}
+          {/* Delivery Date */}
+          <div className="bg-cream/50 rounded-xl p-2.5 border border-border/50">
+            <span className="text-[11px] text-ink-muted block font-medium">
+              Delivery
+            </span>
+            <span className="font-semibold text-ink text-sm flex items-center gap-1 mt-0.5 truncate">
+              <Calendar size={13} className="text-amber-dark shrink-0" />
+              {formatDate(requirement.requiredDate)}
             </span>
           </div>
 
-          <div>
-            <span className="text-ink-muted block text-[11px]">Location</span>
-            <span className="font-semibold text-ink mt-0.5 block flex items-center gap-1 truncate">
-              <MapPin size={12} className="text-forest" />
-              {location || "All India"}
+          {/* Location */}
+          <div className="col-span-2 sm:col-span-1 bg-cream/50 rounded-xl p-2.5 border border-border/50">
+            <span className="text-[11px] text-ink-muted block font-medium">
+              Location
+            </span>
+            <span className="font-semibold text-ink text-sm flex items-center gap-1 mt-0.5 truncate">
+              <MapPin size={13} className="text-forest shrink-0" />
+              {requirement.deliveryLocation || "Ongole"}
             </span>
           </div>
         </div>
       </div>
 
       {/* Action Footer */}
-      <div className="pt-2">
-        {viewMode === "customer" ? (
-          <div className="flex items-center justify-between gap-3">
-            {status === "Quotations Received" && quotations.length > 0 ? (
-              <button
-                type="button"
-                onClick={() => onCompare?.(requirement)}
-                className="
-                  flex-1
-                  inline-flex
-                  items-center
-                  justify-center
-                  gap-2
-                  px-4
-                  py-3
-                  rounded-xl
-                  bg-amber-dark
-                  text-white
-                  text-xs
-                  font-medium
-                  hover:bg-ink
-                  transition-all
-                  shadow-sm
-                "
-              >
-                <span>Compare {quotations.length} Quotations</span>
-                <ArrowRight size={14} />
-              </button>
-            ) : status === "Accepted" ? (
-              <button
-                type="button"
-                onClick={() => onView?.(requirement)}
-                className="
-                  flex-1
-                  inline-flex
-                  items-center
-                  justify-center
-                  gap-2
-                  px-4
-                  py-3
-                  rounded-xl
-                  bg-forest/15
-                  text-forest-dark
-                  text-xs
-                  font-semibold
-                  border
-                  border-forest/20
-                  hover:bg-forest
-                  hover:text-white
-                  transition-all
-                "
-              >
-                <span>View Accepted Quotation</span>
-                <CheckCircle2 size={14} />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => onView?.(requirement)}
-                className="
-                  flex-1
-                  inline-flex
-                  items-center
-                  justify-center
-                  gap-2
-                  px-4
-                  py-3
-                  rounded-xl
-                  bg-cream
-                  border
-                  border-border
-                  text-xs
-                  font-medium
-                  text-ink
-                  hover:border-amber
-                  hover:text-amber-dark
-                  transition-all
-                "
-              >
-                <span>View Requirement</span>
-                <Eye size={14} />
-              </button>
-            )}
-
+      <div className="mt-5 pt-4 border-t border-border flex flex-wrap items-center justify-between gap-3">
+        {/* Customer View Actions */}
+        {viewRole === "customer" ? (
+          <>
             <button
               type="button"
-              onClick={() => onView?.(requirement)}
-              className="
-                w-10
-                h-10
-                rounded-xl
-                border
-                border-border
-                flex
-                items-center
-                justify-center
-                text-ink-soft
-                hover:border-amber
-                hover:text-ink
-                hover:bg-cream
-                transition-all
-              "
-              title="Details"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        ) : (
-          /* Creator View */
-          <div className="grid grid-cols-2 gap-2.5">
-            <button
-              type="button"
-              onClick={() => onView?.(requirement)}
-              className="
-                inline-flex
-                items-center
-                justify-center
-                gap-1.5
-                px-3.5
-                py-2.5
-                rounded-xl
-                border
-                border-border
-                bg-cream/40
-                text-ink
-                text-xs
-                font-medium
-                hover:border-amber
-                hover:bg-cream
-                transition-all
-              "
+              onClick={() => onViewRequirement && onViewRequirement(requirement)}
+              className="inline-flex items-center gap-1.5 text-xs text-ink-soft hover:text-ink font-medium"
             >
               <Eye size={14} />
-              <span>View Requirement</span>
+              View Details
+            </button>
+
+            {quoteCount > 0 ? (
+              <button
+                type="button"
+                onClick={() =>
+                  onCompareQuotations && onCompareQuotations(requirement)
+                }
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-ink text-cream hover:bg-amber-dark text-xs font-semibold shadow-xs hover:shadow transition-all"
+              >
+                <Sparkles size={13} className="text-amber-light" />
+                Compare {quoteCount} Quotation{quoteCount > 1 ? "s" : ""}
+                <ArrowRight size={13} />
+              </button>
+            ) : (
+              <span className="text-xs text-ink-muted italic">
+                Awaiting creator bids...
+              </span>
+            )}
+          </>
+        ) : (
+          /* Creator View Actions */
+          <>
+            <button
+              type="button"
+              onClick={() => onViewRequirement && onViewRequirement(requirement)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-border bg-white text-ink text-xs font-medium hover:bg-cream transition-colors"
+            >
+              <Eye size={14} />
+              View Requirement
             </button>
 
             <button
               type="button"
-              onClick={() => onSendQuotation?.(requirement)}
-              className="
-                inline-flex
-                items-center
-                justify-center
-                gap-1.5
-                px-3.5
-                py-2.5
-                rounded-xl
-                bg-ink
-                text-cream
-                text-xs
-                font-medium
-                hover:bg-amber-dark
-                transition-all
-                shadow-sm
-              "
+              onClick={() => onSendQuotation && onSendQuotation(requirement)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-dark text-white hover:bg-ink text-xs font-semibold shadow-xs hover:shadow transition-all"
             >
-              <MessageSquare size={14} />
-              <span>Send Quotation</span>
+              <Send size={13} />
+              Send Quotation
             </button>
-          </div>
+          </>
         )}
       </div>
     </div>

@@ -1,60 +1,44 @@
 // src/components/requirements/FileUpload.jsx
 
 import { useState } from "react";
-import { Upload, X, ImagePlus, Sparkles } from "lucide-react";
+import { Upload, X, Image as ImageIcon, Sparkles } from "lucide-react";
+
+const SAMPLE_PRESETS = [
+  {
+    name: "Resin Nameplate sample",
+    url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    name: "Gold Flake Resin Decor",
+    url: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    name: "Handcrafted Woodwork",
+    url: "https://images.unsplash.com/photo-1538688525198-9b88f6f53126?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    name: "Ceramic Glaze Plate",
+    url: "https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=800&q=80",
+  },
+];
 
 export default function FileUpload({
   images = [],
   onChange,
-  maxFiles = 5,
-  maxSizeMb = 5,
+  maxFiles = 4,
+  label = "Upload Reference Images",
+  hint = "Upload sketches, color palettes, or reference photos (Max 5MB each)",
 }) {
   const [dragActive, setDragActive] = useState(false);
+  const [showPresets, setShowPresets] = useState(false);
 
-  const sampleImages = [
-    {
-      name: "Resin Nameplate Sample",
-      url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80",
-    },
-    {
-      name: "Wood Art Sample",
-      url: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=600&q=80",
-    },
-    {
-      name: "Ceramic Sample",
-      url: "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?auto=format&fit=crop&w=600&q=80",
-    },
-  ];
-
-  const handleFiles = (fileList) => {
-    const validFiles = [];
-    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
-
-    for (let i = 0; i < fileList.length; i++) {
-      const file = fileList[i];
-      if (!validTypes.includes(file.type)) {
-        alert(`${file.name} is not an accepted image format (JPG, PNG, WEBP).`);
-        continue;
-      }
-      if (file.size > maxSizeMb * 1024 * 1024) {
-        alert(`${file.name} exceeds the ${maxSizeMb}MB size limit.`);
-        continue;
-      }
-
-      // Convert to object preview URL
-      const previewUrl = URL.createObjectURL(file);
-      validFiles.push(previewUrl);
-    }
-
-    if (validFiles.length > 0) {
-      const combined = [...images, ...validFiles].slice(0, maxFiles);
-      onChange(combined);
-    }
-  };
-
-  const handleFileInput = (e) => {
-    if (e.target.files) {
-      handleFiles(e.target.files);
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
     }
   };
 
@@ -62,178 +46,170 @@ export default function FileUpload({
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files) {
-      handleFiles(e.dataTransfer.files);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFiles(Array.from(e.dataTransfer.files));
     }
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(true);
+  const handleFileInput = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFiles(Array.from(e.target.files));
+    }
   };
 
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
+  const handleFiles = (files) => {
+    const validFiles = files.filter(
+      (file) =>
+        ["image/jpeg", "image/png", "image/webp"].includes(file.type) &&
+        file.size <= 5 * 1024 * 1024
+    );
+
+    if (validFiles.length === 0) {
+      alert("Please upload valid image files (JPG, PNG, WEBP) under 5MB.");
+      return;
+    }
+
+    // Convert to local object URLs for immediate preview
+    const newImageUrls = validFiles.map((file) => URL.createObjectURL(file));
+    const combined = [...images, ...newImageUrls].slice(0, maxFiles);
+    onChange(combined);
   };
 
   const removeImage = (indexToRemove) => {
-    const filtered = images.filter((_, idx) => idx !== indexToRemove);
-    onChange(filtered);
+    const updated = images.filter((_, idx) => idx !== indexToRemove);
+    onChange(updated);
   };
 
-  const addSampleImage = (url) => {
-    if (images.includes(url)) return;
+  const addPresetImage = (url) => {
     if (images.length >= maxFiles) {
-      alert(`Maximum of ${maxFiles} reference images allowed.`);
+      alert(`Maximum ${maxFiles} images allowed.`);
       return;
     }
-    onChange([...images, url]);
+    if (!images.includes(url)) {
+      onChange([...images, url]);
+    }
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
         <label className="block text-sm font-medium text-ink">
-          Upload Reference Images
+          {label}
         </label>
-        <span className="text-xs text-ink-muted">
-          {images.length}/{maxFiles} uploaded
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowPresets(!showPresets)}
+            className="inline-flex items-center gap-1 text-xs text-amber-dark hover:underline font-medium"
+          >
+            <Sparkles size={12} />
+            {showPresets ? "Hide sample inspiration" : "Pick from sample photos"}
+          </button>
+          <span className="text-xs text-ink-muted">
+            {images.length}/{maxFiles}
+          </span>
+        </div>
       </div>
 
-      {/* Drop Zone */}
+      {/* Preset Inspiration Chooser */}
+      {showPresets && (
+        <div className="p-3.5 bg-cream-dark/50 border border-border rounded-xl">
+          <p className="text-xs text-ink-soft mb-2.5 font-medium">
+            Click any inspiration sample to add to your requirement:
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {SAMPLE_PRESETS.map((preset, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => addPresetImage(preset.url)}
+                className="group relative rounded-lg overflow-hidden border border-border bg-white text-left hover:border-amber transition-all shadow-2xs"
+              >
+                <img
+                  src={preset.url}
+                  alt={preset.name}
+                  className="w-full h-16 object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                <span className="block p-1.5 text-[11px] font-medium text-ink truncate">
+                  + {preset.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Drag & Drop Upload Zone */}
       <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
         onDrop={handleDrop}
         className={`
-          relative
-          rounded-2xl
-          border-2
-          border-dashed
-          transition-all
-          p-6
-          text-center
+          relative border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer
           ${
             dragActive
-              ? "border-amber bg-amber/5 scale-[0.99]"
-              : "border-border bg-gradient-to-b from-cream/40 to-white hover:border-amber/60"
+              ? "border-amber bg-amber/5 scale-[1.005]"
+              : "border-border hover:border-amber/60 bg-cream/30 hover:bg-cream/60"
           }
         `}
       >
         <input
+          id="custom-file-upload"
           type="file"
-          id="reference-images-input"
           multiple
           accept="image/jpeg,image/png,image/webp"
           onChange={handleFileInput}
-          className="hidden"
-          disabled={images.length >= maxFiles}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         />
 
-        <div className="flex flex-col items-center justify-center">
-          <div className="w-12 h-12 rounded-2xl bg-white border border-border shadow-sm flex items-center justify-center text-amber-dark mb-3">
-            <ImagePlus size={22} />
+        <div className="flex flex-col items-center justify-center pointer-events-none">
+          <div className="w-12 h-12 rounded-2xl bg-white border border-border shadow-xs flex items-center justify-center text-amber-dark mb-3">
+            <Upload size={20} />
           </div>
 
           <p className="text-sm font-medium text-ink">
-            Drag & drop reference images here, or{" "}
-            <label
-              htmlFor="reference-images-input"
-              className="text-amber-dark hover:underline cursor-pointer font-semibold"
-            >
-              browse
-            </label>
+            <span className="text-amber-dark underline font-semibold">
+              Click to upload
+            </span>{" "}
+            or drag and drop images here
           </p>
-
-          <p className="text-xs text-ink-muted mt-1">
-            Supports JPG, PNG, WEBP (Max {maxSizeMb}MB each, up to {maxFiles} images)
-          </p>
+          <p className="text-xs text-ink-soft mt-1">{hint}</p>
         </div>
       </div>
 
-      {/* Previews */}
+      {/* Uploaded Images Preview Strip */}
       {images.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2">
-          {images.map((imgUrl, idx) => (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+          {images.map((imgUrl, index) => (
             <div
-              key={idx}
-              className="relative group rounded-xl overflow-hidden aspect-square border border-border bg-cream shadow-sm"
+              key={index}
+              className="relative group rounded-xl overflow-hidden border border-border bg-white aspect-square shadow-xs"
             >
               <img
                 src={imgUrl}
-                alt={`Reference ${idx + 1}`}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                alt={`Reference ${index + 1}`}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
-              <button
-                type="button"
-                onClick={() => removeImage(idx)}
-                className="
-                  absolute
-                  top-2
-                  right-2
-                  w-7
-                  h-7
-                  rounded-full
-                  bg-black/70
-                  hover:bg-rose
-                  text-white
-                  flex
-                  items-center
-                  justify-center
-                  transition-colors
-                  shadow-md
-                "
-                title="Remove image"
-              >
-                <X size={14} />
-              </button>
-              <span className="absolute bottom-1.5 left-2 text-[10px] font-semibold bg-black/60 text-white px-1.5 py-0.5 rounded">
-                Ref #{idx + 1}
+              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-start justify-end p-1.5">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeImage(index);
+                  }}
+                  className="w-6 h-6 rounded-full bg-white text-ink flex items-center justify-center shadow-md hover:bg-rose hover:text-white transition-colors"
+                  title="Remove image"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+              <span className="absolute bottom-1 left-1.5 px-1.5 py-0.5 rounded bg-black/60 text-white text-[10px] font-medium backdrop-blur-xs">
+                Ref #{index + 1}
               </span>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Sample Reference Inspiration */}
-      {images.length < maxFiles && (
-        <div className="pt-2">
-          <p className="text-xs text-ink-muted flex items-center gap-1 mb-2">
-            <Sparkles size={13} className="text-amber-dark" />
-            Or pick from reference inspiration:
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {sampleImages.map((sample, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => addSampleImage(sample.url)}
-                className="
-                  inline-flex
-                  items-center
-                  gap-1.5
-                  text-xs
-                  bg-white
-                  border
-                  border-border
-                  hover:border-amber
-                  px-2.5
-                  py-1.5
-                  rounded-lg
-                  text-ink-soft
-                  hover:text-ink
-                  transition-all
-                "
-              >
-                <span>+</span>
-                <span>{sample.name}</span>
-              </button>
-            ))}
-          </div>
         </div>
       )}
     </div>

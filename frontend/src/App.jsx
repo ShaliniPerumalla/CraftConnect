@@ -16,12 +16,10 @@ import { CraftsProvider } from "./context/CraftsContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import { OrdersProvider } from "./context/OrdersContext";
 import { NotificationProvider } from "./context/NotificationContext";
+import { RequirementQuotationProvider } from "./context/RequirementQuotationContext";
 import { RequirementsProvider } from "./context/RequirementsContext";
 import { ReviewProvider } from "./context/ReviewContext";
-import Complaints from "./pages/Complaints";
 import { ComplaintProvider } from "./context/ComplaintContext";
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminComplaints from "./pages/AdminComplaints";
 
 // ======================================================
 // MAIN PAGES
@@ -77,6 +75,9 @@ import OrderDetails from "./pages/OrderDetails";
 import CustomerProfile from "./pages/CustomerProfile";
 import Notifications from "./pages/Notifications";
 import Chat from "./pages/chat";
+import Complaints from "./pages/Complaints";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminComplaints from "./pages/AdminComplaints";
 
 // ======================================================
 // SCROLL TO TOP
@@ -102,207 +103,186 @@ function ScrollToTop() {
 
 export default function App() {
   return (
-    
     <ReviewProvider>
-    <BrowserRouter>
-      <NotificationProvider>
-        <OrdersProvider>
-          <WishlistProvider>
-            <CartProvider>
-              <CraftsProvider>
-               <ComplaintProvider>                <RequirementsProvider>
+      <BrowserRouter>
+        <NotificationProvider>
+          <OrdersProvider>
+            <WishlistProvider>
+              <CartProvider>
+                <CraftsProvider>
+                  <RequirementQuotationProvider>
+                    <ComplaintProvider>
+                      <RequirementsProvider>
 
-                  <ScrollToTop />
+                        <ScrollToTop />
 
-                <Routes>
+                        <Routes>
 
-                  {/* ================= MAIN ================= */}
+                          {/* ================= MAIN ================= */}
 
-                  <Route
-                    path="/"
-                    element={<Home />}
-                  />
+                          <Route path="/" element={<Home />} />
+                          <Route path="/explore" element={<Explore />} />
+                          <Route path="/categories" element={<Categories />} />
+                          <Route path="/creators" element={<Creators />} />
 
-                  <Route
-                    path="/explore"
-                    element={<Explore />}
-                  />
+                          {/* ================= CRAFT ================= */}
 
-                  <Route
-                    path="/categories"
-                    element={<Categories />}
-                  />
+                          <Route
+                            path="/craft/:id"
+                            element={<CraftDetails />}
+                          />
 
-                  <Route
-                    path="/creators"
-                    element={<Creators />}
-                  />
+                          <Route
+                            path="/wishlist"
+                            element={<Wishlist />}
+                          />
 
+                          {/* ================= CREATOR ================= */}
 
-                  {/* ================= CRAFT ================= */}
+                          <Route
+                            path="/creator/:id"
+                            element={<CreatorProfile />}
+                          />
 
-                  <Route
-                    path="/craft/:id"
-                    element={<CraftDetails />}
-                  />
+                          <Route
+                            path="/creator-dashboard"
+                            element={<CreatorDashboard />}
+                          />
 
-                  <Route
-                    path="/wishlist"
-                    element={<Wishlist />}
-                  />
+                          <Route
+                            path="/creator/add-craft"
+                            element={<AddCraft />}
+                          />
 
+                          <Route
+                            path="/creator/crafts"
+                            element={<MyCrafts />}
+                          />
 
-                  {/* ================= CREATOR ================= */}
+                          <Route
+                            path="/creator/edit-craft/:id"
+                            element={<EditCraft />}
+                          />
 
-                  <Route
-                    path="/creator/:id"
-                    element={<CreatorProfile />}
-                  />
+                          <Route
+                            path="/creator/orders"
+                            element={<CreatorOrders />}
+                          />
 
-                  <Route
-                    path="/creator-dashboard"
-                    element={<CreatorDashboard />}
-                  />
+                          {/* ================= CART / CHECKOUT ================= */}
 
-                  <Route
-                    path="/creator/add-craft"
-                    element={<AddCraft />}
-                  />
+                          <Route
+                            path="/cart"
+                            element={<Cart />}
+                          />
 
-                  <Route
-                    path="/creator/crafts"
-                    element={<MyCrafts />}
-                  />
+                          <Route
+                            path="/checkout"
+                            element={<Checkout />}
+                          />
 
-                  <Route
-                    path="/creator/edit-craft/:id"
-                    element={<EditCraft />}
-                  />
+                          <Route
+                            path="/order-success"
+                            element={<OrderSuccess />}
+                          />
 
-                  <Route
-                    path="/creator/orders"
-                    element={<CreatorOrders />}
-                  />
+                          {/* ================= AUTH ================= */}
 
+                          <Route
+                            path="/login"
+                            element={<Login />}
+                          />
 
-                  {/* ================= CART ================= */}
+                          <Route
+                            path="/register"
+                            element={<Register />}
+                          />
 
-                  <Route
-                    path="/cart"
-                    element={<Cart />}
-                  />
+                          <Route
+                            path="/forgot-password"
+                            element={<ForgotPassword />}
+                          />
 
-                  <Route
-                    path="/checkout"
-                    element={<Checkout />}
-                  />
+                          <Route
+                            path="/reset-password"
+                            element={<ResetPassword />}
+                          />
 
-                  <Route
-                    path="/order-success"
-                    element={<OrderSuccess />}
-                  />
+                          {/* ================= REQUIREMENTS ================= */}
 
+                          <Route
+                            path="/requirements"
+                            element={<Requirements />}
+                          />
 
-                  {/* ================= AUTH ================= */}
+                          {/* ================= ORDERS ================= */}
 
-                  <Route
-                    path="/login"
-                    element={<Login />}
-                  />
+                          <Route
+                            path="/orders"
+                            element={<Orders />}
+                          />
 
-                  <Route
-                    path="/register"
-                    element={<Register />}
-                  />
+                          <Route
+                            path="/orders/:id"
+                            element={<OrderDetails />}
+                          />
 
-                  <Route
-                    path="/forgot-password"
-                    element={<ForgotPassword />}
-                  />
+                          {/* ================= CHAT ================= */}
 
-                  <Route
-                    path="/reset-password"
-                    element={<ResetPassword />}
-                  />
+                          <Route
+                            path="/chat"
+                            element={<Chat />}
+                          />
 
+                          {/* ================= PROFILE ================= */}
 
-                  {/* ================= CUSTOM ORDER ================= */}
+                          <Route
+                            path="/profile"
+                            element={<CustomerProfile />}
+                          />
 
-                  <Route
-                    path="/requirements"
-                    element={<Requirements />}
-                  />
+                          <Route
+                            path="/customer-profile"
+                            element={<CustomerProfile />}
+                          />
 
+                          {/* ================= NOTIFICATIONS ================= */}
 
-                  {/* ================= CHAT ================= */}
+                          <Route
+                            path="/notifications"
+                            element={<Notifications />}
+                          />
 
-                  <Route
-                    path="/chat"
-                    element={<Chat />}
-                  />
+                          {/* ================= COMPLAINTS ================= */}
 
+                          <Route
+                            path="/complaints"
+                            element={<Complaints />}
+                          />
 
-                  {/* ================= ORDERS ================= */}
+                          {/* ================= ADMIN ================= */}
 
-                  <Route
-                    path="/orders"
-                    element={<Orders />}
-                  />
+                          <Route
+                            path="/admin"
+                            element={<AdminDashboard />}
+                          />
 
-                  <Route
-                    path="/orders/:id"
-                    element={<OrderDetails />}
-                  />
+                          <Route
+                            path="/admin/complaints"
+                            element={<AdminComplaints />}
+                          />
 
+                        </Routes>
 
-                  {/* ================= PROFILE ================= */}
-
-                  <Route
-                    path="/profile"
-                    element={<CustomerProfile />}
-                  />
-
-                  <Route
-                    path="/customer-profile"
-                    element={<CustomerProfile />}
-                  />
-
-
-                  {/* ================= NOTIFICATIONS ================= */}
-
-                  <Route
-                    path="/notifications"
-                    element={<Notifications />}
-                  />
-
-                  <Route
-  path="/complaints"
-  element={<Complaints />}
-/>
-
-<Route
-  path="/admin"
-  element={<AdminDashboard />}
-/>
-
-<Route
-  path="/admin/complaints"
-  element={<AdminComplaints />}
-/>
-
-                </Routes>
-
-                </RequirementsProvider>
-                
-              </ComplaintProvider>
-              </CraftsProvider>
-            </CartProvider>
-          </WishlistProvider>
-        </OrdersProvider>
-      </NotificationProvider>
-    </BrowserRouter>
-  </ReviewProvider>
-
-
+                      </RequirementsProvider>
+                    </ComplaintProvider>
+                  </RequirementQuotationProvider>
+                </CraftsProvider>
+              </CartProvider>
+            </WishlistProvider>
+          </OrdersProvider>
+        </NotificationProvider>
+      </BrowserRouter>
+    </ReviewProvider>
   );
 }
