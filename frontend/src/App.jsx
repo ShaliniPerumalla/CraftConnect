@@ -16,6 +16,7 @@ import { CraftsProvider } from "./context/CraftsContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import { OrdersProvider } from "./context/OrdersContext";
 import { NotificationProvider } from "./context/NotificationContext";
+import { RequirementsProvider } from "./context/RequirementsContext";
 import { ReviewProvider } from "./context/ReviewContext";
 import Complaints from "./pages/Complaints";
 import { ComplaintProvider } from "./context/ComplaintContext";
@@ -109,8 +110,9 @@ export default function App() {
           <WishlistProvider>
             <CartProvider>
               <CraftsProvider>
-               <ComplaintProvider>
-                <ScrollToTop />
+               <ComplaintProvider>                <RequirementsProvider>
+
+                  <ScrollToTop />
 
                 <Routes>
 
@@ -290,6 +292,7 @@ export default function App() {
 
                 </Routes>
 
+                </RequirementsProvider>
                 
               </ComplaintProvider>
               </CraftsProvider>

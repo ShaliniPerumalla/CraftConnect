@@ -8,6 +8,7 @@ import {
   ShoppingBag,
   TrendingUp,
   Users,
+  Sparkles,
 } from "lucide-react";
 
 import Navbar from "../components/Navbar";
@@ -307,6 +308,57 @@ export default function CreatorDashboard() {
           </div>
 
         </div>
+
+            {/* ==================================================
+                CUSTOM REQUESTS & QUOTATIONS (MEMBER 3)
+            ================================================== */}
+
+            <div className="mt-6">
+
+              <div className="bg-white border border-border rounded-[28px] p-6 sm:p-8">
+
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-7">
+
+                  <div className="flex items-start gap-4">
+
+                    <div className="w-14 h-14 shrink-0 rounded-2xl bg-amber/15 flex items-center justify-center">
+                      <Sparkles
+                        size={25}
+                        className="text-amber-dark"
+                      />
+                    </div>
+
+                    <div>
+
+                      <p className="text-xs uppercase tracking-[0.18em] text-amber-dark font-semibold">
+                        Custom Order Quotations
+                      </p>
+
+                      <h2 className="font-display text-3xl mt-2">
+                        Available Custom Requests
+                      </h2>
+
+                      <p className="text-sm text-ink-soft mt-2 max-w-xl">
+                        Discover open custom product requirements submitted by customers. Review design briefs, materials, and send competitive quotations.
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  <Link
+                    to="/requirements?tab=creator"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-amber-dark text-white text-sm font-medium hover:bg-ink transition-colors"
+                  >
+                    View Requests & Send Quotes
+                    <ArrowRight size={16} />
+                  </Link>
+
+                </div>
+
+              </div>
+
+            </div>
 
             {/* ==================================================
                 RECENT CRAFTS
