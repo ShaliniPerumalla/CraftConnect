@@ -16,6 +16,7 @@ import { CraftsProvider } from "./context/CraftsContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import { OrdersProvider } from "./context/OrdersContext";
 import { NotificationProvider } from "./context/NotificationContext";
+import { RequirementQuotationProvider } from "./context/RequirementQuotationContext";
 
 // ======================================================
 // MAIN PAGES
@@ -101,141 +102,143 @@ export default function App() {
           <WishlistProvider>
             <CartProvider>
               <CraftsProvider>
+                <RequirementQuotationProvider>
 
-                <ScrollToTop />
+                  <ScrollToTop />
 
-                <Routes>
+                  <Routes>
 
-                  {/* ================= MAIN ================= */}
+                    {/* ================= MAIN ================= */}
 
-                  <Route path="/" element={<Home />} />
-                  <Route path="/explore" element={<Explore />} />
-                  <Route path="/categories" element={<Categories />} />
-                  <Route path="/creators" element={<Creators />} />
+                    <Route path="/" element={<Home />} />
+                    <Route path="/explore" element={<Explore />} />
+                    <Route path="/categories" element={<Categories />} />
+                    <Route path="/creators" element={<Creators />} />
 
-                  {/* ================= CRAFT ================= */}
+                    {/* ================= CRAFT ================= */}
 
-                  <Route
-                    path="/craft/:id"
-                    element={<CraftDetails />}
-                  />
+                    <Route
+                      path="/craft/:id"
+                      element={<CraftDetails />}
+                    />
 
-                  <Route
-                    path="/wishlist"
-                    element={<Wishlist />}
-                  />
+                    <Route
+                      path="/wishlist"
+                      element={<Wishlist />}
+                    />
 
-                  {/* ================= CREATOR ================= */}
+                    {/* ================= CREATOR ================= */}
 
-                  <Route
-                    path="/creator/:id"
-                    element={<CreatorProfile />}
-                  />
+                    <Route
+                      path="/creator/:id"
+                      element={<CreatorProfile />}
+                    />
 
-                  <Route
-                    path="/creator-dashboard"
-                    element={<CreatorDashboard />}
-                  />
+                    <Route
+                      path="/creator-dashboard"
+                      element={<CreatorDashboard />}
+                    />
 
-                  <Route
-                    path="/creator/add-craft"
-                    element={<AddCraft />}
-                  />
+                    <Route
+                      path="/creator/add-craft"
+                      element={<AddCraft />}
+                    />
 
-                  <Route
-                    path="/creator/crafts"
-                    element={<MyCrafts />}
-                  />
+                    <Route
+                      path="/creator/crafts"
+                      element={<MyCrafts />}
+                    />
 
-                  <Route
-                    path="/creator/edit-craft/:id"
-                    element={<EditCraft />}
-                  />
+                    <Route
+                      path="/creator/edit-craft/:id"
+                      element={<EditCraft />}
+                    />
 
-                  <Route
-                    path="/creator/orders"
-                    element={<CreatorOrders />}
-                  />
+                    <Route
+                      path="/creator/orders"
+                      element={<CreatorOrders />}
+                    />
 
-                  {/* ================= CART ================= */}
+                    {/* ================= CART ================= */}
 
-                  <Route
-                    path="/cart"
-                    element={<Cart />}
-                  />
+                    <Route
+                      path="/cart"
+                      element={<Cart />}
+                    />
 
-                  <Route
-                    path="/checkout"
-                    element={<Checkout />}
-                  />
+                    <Route
+                      path="/checkout"
+                      element={<Checkout />}
+                    />
 
-                  <Route
-                    path="/order-success"
-                    element={<OrderSuccess />}
-                  />
+                    <Route
+                      path="/order-success"
+                      element={<OrderSuccess />}
+                    />
 
-                  {/* ================= AUTH ================= */}
+                    {/* ================= AUTH ================= */}
 
-                  <Route
-                    path="/login"
-                    element={<Login />}
-                  />
+                    <Route
+                      path="/login"
+                      element={<Login />}
+                    />
 
-                  <Route
-                    path="/register"
-                    element={<Register />}
-                  />
+                    <Route
+                      path="/register"
+                      element={<Register />}
+                    />
 
-                  <Route
-                    path="/forgot-password"
-                    element={<ForgotPassword />}
-                  />
+                    <Route
+                      path="/forgot-password"
+                      element={<ForgotPassword />}
+                    />
 
-                  <Route
-                    path="/reset-password"
-                    element={<ResetPassword />}
-                  />
+                    <Route
+                      path="/reset-password"
+                      element={<ResetPassword />}
+                    />
 
-                  {/* ================= CUSTOM ORDER ================= */}
+                    {/* ================= CUSTOM ORDER ================= */}
 
-                  <Route
-                    path="/requirements"
-                    element={<Requirements />}
-                  />
+                    <Route
+                      path="/requirements"
+                      element={<Requirements />}
+                    />
 
-                  {/* ================= ORDERS ================= */}
+                    {/* ================= ORDERS ================= */}
 
-                  <Route
-                    path="/orders"
-                    element={<Orders />}
-                  />
+                    <Route
+                      path="/orders"
+                      element={<Orders />}
+                    />
 
-                  <Route
-                    path="/orders/:id"
-                    element={<OrderDetails />}
-                  />
+                    <Route
+                      path="/orders/:id"
+                      element={<OrderDetails />}
+                    />
 
-                  {/* ================= PROFILE ================= */}
+                    {/* ================= PROFILE ================= */}
 
-                  <Route
-                    path="/profile"
-                    element={<CustomerProfile />}
-                  />
+                    <Route
+                      path="/profile"
+                      element={<CustomerProfile />}
+                    />
 
-                  <Route
-                    path="/customer-profile"
-                    element={<CustomerProfile />}
-                  />
+                    <Route
+                      path="/customer-profile"
+                      element={<CustomerProfile />}
+                    />
 
-                  {/* ================= NOTIFICATIONS ================= */}
+                    {/* ================= NOTIFICATIONS ================= */}
 
-                  <Route
-                    path="/notifications"
-                    element={<Notifications />}
-                  />
+                    <Route
+                      path="/notifications"
+                      element={<Notifications />}
+                    />
 
-                </Routes>
+                  </Routes>
 
+                </RequirementQuotationProvider>
               </CraftsProvider>
             </CartProvider>
           </WishlistProvider>
