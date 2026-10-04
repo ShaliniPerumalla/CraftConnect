@@ -6,7 +6,8 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Plus,
-  Image as ImageIcon,
+  Upload,
+  X,
   Check,
 } from "lucide-react";
 
@@ -49,6 +50,31 @@ export default function AddCraft() {
     setFormData((previous) => ({
       ...previous,
       [name]: value,
+    }));
+  }
+
+  // ======================================================
+  // FILE UPLOAD HANDLER
+  // ======================================================
+
+  function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData((previous) => ({
+        ...previous,
+        image: reader.result, // Sets base64 preview URL
+      }));
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleRemoveImage() {
+    setFormData((previous) => ({
+      ...previous,
+      image: "",
     }));
   }
 
@@ -330,31 +356,62 @@ export default function AddCraft() {
 
                 </div>
 
-                {/* IMAGE */}
+                {/* IMAGE UPLOAD */}
 
                 <div className="sm:col-span-2">
 
                   <label className="text-sm font-semibold">
-                    Image URL
+                    Upload Craft Image
                   </label>
 
-                  <div className="relative mt-2">
+                  {!formData.image ? (
+                    <div className="relative mt-2 border-2 border-dashed border-border rounded-2xl p-6 text-center bg-cream/40 hover:bg-cream/80 hover:border-amber transition-all cursor-pointer group">
 
-                    <ImageIcon
-                      size={17}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft"
-                    />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      />
 
-                    <input
-                      type="url"
-                      name="image"
-                      value={formData.image}
-                      onChange={handleChange}
-                      placeholder="https://..."
-                      className="w-full pl-11 pr-4 py-3 rounded-xl border border-border bg-cream/40 outline-none focus:border-amber"
-                    />
+                      <div className="flex flex-col items-center justify-center">
 
-                  </div>
+                        <div className="w-12 h-12 rounded-full bg-white border border-border flex items-center justify-center text-amber-dark group-hover:scale-110 transition-transform mb-2 shadow-sm">
+                          <Upload size={18} />
+                        </div>
+
+                        <p className="text-sm font-semibold text-ink">
+                          Click to upload image
+                        </p>
+
+                        <p className="text-xs text-ink-soft mt-1">
+                          PNG, JPG, WEBP up to 10MB
+                        </p>
+
+                      </div>
+
+                    </div>
+                  ) : (
+                    /* UPLOADED PREVIEW */
+                    <div className="relative mt-2 w-36 h-36 rounded-2xl overflow-hidden border border-border shadow-sm group">
+
+                      <img
+                        src={formData.image}
+                        alt="Craft preview"
+                        className="w-full h-full object-cover"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-ink/80 text-white flex items-center justify-center hover:bg-rose transition-colors"
+                        title="Remove image"
+                      >
+                        <X size={15} />
+                      </button>
+
+                    </div>
+                  )}
 
                   <p className="text-xs text-ink-soft mt-2">
                     Leave empty to use a default craft image.

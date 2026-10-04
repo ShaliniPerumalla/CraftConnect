@@ -1,4 +1,3 @@
-
 // src/pages/CreatorProfile.jsx
 
 import { Link, useParams } from "react-router-dom";
@@ -8,7 +7,6 @@ import {
   Heart,
   MapPin,
   Star,
-  LayoutDashboard,
 } from "lucide-react";
 
 import { crafts, creators } from "../utils/mockData";
@@ -181,30 +179,6 @@ export default function CreatorProfile() {
             {/* ======================================== */}
 
             <div className="flex flex-wrap gap-3 mt-7 pt-6 border-t border-border">
-
-              {/* Creator Dashboard */}
-              <Link
-                to="/creator-dashboard"
-                className="
-                  inline-flex
-                  items-center
-                  justify-center
-                  gap-2
-                  px-5
-                  py-3
-                  rounded-xl
-                  bg-ink
-                  text-cream
-                  text-sm
-                  font-medium
-                  hover:bg-amber-dark
-                  transition-colors
-                "
-              >
-                <LayoutDashboard size={17} />
-
-                Creator Dashboard
-              </Link>
 
               {/* Explore more crafts */}
               <Link

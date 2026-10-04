@@ -25,14 +25,23 @@ export default function Login() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Frontend only for now.
-    // Backend authentication will be connected later.
-    console.log('Login data:', {
-      ...formData,
-      role,
-    });
+    // Create standard user payload based on selected role
+    const userPayload = {
+      email: formData.email,
+      role: role, // 'buyer' or 'creator'
+      name: role === 'creator' ? 'Artisan Creator' : 'Craft Customer',
+      id: role === 'creator' ? 'creator-101' : 'user-101',
+    };
 
-    navigate('/');
+    // Store user session in localStorage
+    localStorage.setItem('craftconnect_user', JSON.stringify(userPayload));
+
+    // Redirect dynamically based on chosen role
+    if (role === 'creator') {
+      navigate('/creator-dashboard');
+    } else {
+      navigate('/');
+    }
   };
 
   return (
@@ -230,12 +239,12 @@ export default function Login() {
                   Password
                 </label>
 
-                <button
-                  type="button"
+                <Link
+                  to="/forgot-password"
                   className="text-xs font-medium text-terracotta-dark hover:underline"
                 >
                   Forgot password?
-                </button>
+                </Link>
 
               </div>
 
@@ -280,7 +289,7 @@ export default function Login() {
               type="submit"
               className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-ink text-cream font-medium hover:bg-terracotta-dark transition-colors"
             >
-              Sign in
+              Sign in as {role === 'creator' ? 'Creator' : 'Buyer'}
               <ArrowRight size={17} />
             </button>
 

@@ -1,6 +1,9 @@
+// src/components/Navbar.jsx
+
 import {
   Link,
   NavLink,
+  useNavigate,
 } from "react-router-dom";
 
 import {
@@ -11,9 +14,12 @@ import {
   LogIn,
   UserPlus,
   UserRound,
+  LayoutDashboard,
+  LogOut,
+  Package,
 } from "lucide-react";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
@@ -22,6 +28,8 @@ import NotificationBell from "./notifications/NotificationBell";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
   const { wishlistCount } = useWishlist();
   const { cartItems } = useCart();
@@ -33,7 +41,22 @@ export default function Navbar() {
       0
     ) || 0;
 
-  const navItems = [
+  // Sync user state from localStorage
+  useEffect(() => {
+    const storedUser = localStorage.getItem("craftconnect_user");
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (err) {
+        console.error("Error parsing stored user:", err);
+      }
+    }
+  }, []);
+
+  const isCreator = user?.role === "creator";
+
+  // BUYER NAVIGATION LINKS (Includes My Orders)
+  const buyerNavItems = [
     {
       label: "Home",
       path: "/",
@@ -54,10 +77,43 @@ export default function Navbar() {
       label: "Custom Order",
       path: "/requirements",
     },
+    {
+      label: "My Orders",
+      path: "/orders",
+    },
   ];
+
+  // CREATOR NAVIGATION LINKS
+  const creatorNavItems = [
+    {
+      label: "Dashboard",
+      path: "/creator-dashboard",
+    },
+    {
+      label: "My Crafts",
+      path: "/creator/crafts",
+    },
+    {
+      label: "Add Craft",
+      path: "/creator/add-craft",
+    },
+    {
+      label: "Incoming Orders",
+      path: "/creator/orders",
+    },
+  ];
+
+  const currentNavItems = isCreator ? creatorNavItems : buyerNavItems;
 
   function closeMobileMenu() {
     setMobileMenuOpen(false);
+  }
+
+  function handleLogout() {
+    localStorage.removeItem("craftconnect_user");
+    setUser(null);
+    closeMobileMenu();
+    navigate("/login");
   }
 
   return (
@@ -94,7 +150,7 @@ export default function Navbar() {
           {/* LOGO */}
 
           <Link
-            to="/"
+            to={isCreator ? "/creator-dashboard" : "/"}
             onClick={closeMobileMenu}
             className="
               font-display
@@ -103,12 +159,20 @@ export default function Navbar() {
               text-ink
               shrink-0
               tracking-tight
+              flex
+              items-center
+              gap-2
             "
           >
             Craft
             <span className="text-amber">
               Connect
             </span>
+            {isCreator && (
+              <span className="text-[10px] font-sans font-bold uppercase bg-forest text-white px-2 py-0.5 rounded-full tracking-wider">
+                Creator
+              </span>
+            )}
           </Link>
 
           {/* DESKTOP NAV */}
@@ -121,7 +185,7 @@ export default function Navbar() {
               gap-5
             "
           >
-            {navItems.map((item) => (
+            {currentNavItems.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
@@ -151,195 +215,282 @@ export default function Navbar() {
           >
             <NotificationBell />
 
-            {/* PROFILE */}
-
-            <Link
-              to="/customer-profile"
-              className="
-                group
-                relative
-                w-10
-                h-10
-                rounded-full
-                flex
-                items-center
-                justify-center
-                text-ink-soft
-                hover:bg-white
-                hover:text-amber-dark
-                transition-all
-              "
-              aria-label="Customer profile"
-              title="My Profile"
-            >
-              <UserRound
-                size={19}
-                strokeWidth={1.8}
-              />
-
-              <span
-                className="
-                  absolute
-                  bottom-1
-                  right-1
-                  w-2
-                  h-2
-                  rounded-full
-                  bg-forest
-                  border-2
-                  border-cream
-                "
-              />
-            </Link>
-
-            {/* WISHLIST */}
-
-            <Link
-              to="/wishlist"
-              className="
-                relative
-                w-10
-                h-10
-                rounded-full
-                flex
-                items-center
-                justify-center
-                text-ink-soft
-                hover:bg-white
-                hover:text-rose
-                transition-colors
-              "
-              aria-label="Liked crafts"
-              title="Liked Crafts"
-            >
-              <Heart
-                size={19}
-                className={
-                  wishlistCount > 0
-                    ? "text-rose fill-rose"
-                    : ""
-                }
-              />
-
-              {wishlistCount > 0 && (
-                <span
+            {isCreator ? (
+              /* CREATOR ACTIONS */
+              <>
+                <Link
+                  to="/creator-dashboard"
                   className="
-                    absolute
-                    -top-1
-                    -right-1
-                    min-w-[18px]
-                    h-[18px]
-                    px-1
+                    group
+                    relative
+                    w-10
+                    h-10
                     rounded-full
-                    bg-rose
-                    text-white
-                    text-[10px]
-                    font-bold
                     flex
                     items-center
                     justify-center
+                    text-ink-soft
+                    hover:bg-white
+                    hover:text-amber-dark
+                    transition-all
                   "
+                  aria-label="Creator Dashboard"
+                  title="Creator Dashboard"
                 >
-                  {wishlistCount > 99
-                    ? "99+"
-                    : wishlistCount}
-                </span>
-              )}
-            </Link>
+                  <LayoutDashboard size={19} />
+                </Link>
 
-            {/* CART */}
-
-            <Link
-              to="/cart"
-              className="
-                relative
-                w-10
-                h-10
-                rounded-full
-                flex
-                items-center
-                justify-center
-                text-ink-soft
-                hover:bg-white
-                hover:text-ink
-                transition-colors
-              "
-              aria-label="Shopping cart"
-              title="Shopping Cart"
-            >
-              <ShoppingBag size={19} />
-
-              {cartCount > 0 && (
-                <span
+                <button
+                  type="button"
+                  onClick={handleLogout}
                   className="
-                    absolute
-                    -top-1
-                    -right-1
-                    min-w-[18px]
-                    h-[18px]
-                    px-1
+                    inline-flex
+                    items-center
+                    gap-2
+                    px-4
+                    py-2.5
                     rounded-full
-                    bg-amber-dark
-                    text-white
-                    text-[10px]
-                    font-bold
+                    border
+                    border-border
+                    text-ink-soft
+                    hover:bg-white
+                    hover:text-rose
+                    text-sm
+                    font-medium
+                    transition-colors
+                    ml-2
+                  "
+                  title="Logout"
+                >
+                  <LogOut size={15} />
+                  Logout
+                </button>
+              </>
+            ) : (
+              /* BUYER ACTIONS */
+              <>
+                {/* PROFILE */}
+
+                <Link
+                  to="/customer-profile"
+                  className="
+                    group
+                    relative
+                    w-10
+                    h-10
+                    rounded-full
                     flex
                     items-center
                     justify-center
+                    text-ink-soft
+                    hover:bg-white
+                    hover:text-amber-dark
+                    transition-all
                   "
+                  aria-label="Customer profile"
+                  title="My Profile"
                 >
-                  {cartCount > 99
-                    ? "99+"
-                    : cartCount}
-                </span>
-              )}
-            </Link>
+                  <UserRound
+                    size={19}
+                    strokeWidth={1.8}
+                  />
 
-            {/* LOGIN */}
+                  {user && (
+                    <span
+                      className="
+                        absolute
+                        bottom-1
+                        right-1
+                        w-2
+                        h-2
+                        rounded-full
+                        bg-forest
+                        border-2
+                        border-cream
+                      "
+                    />
+                  )}
+                </Link>
 
-            <Link
-              to="/login"
-              className="
-                inline-flex
-                items-center
-                gap-2
-                px-5
-                py-2.5
-                rounded-full
-                bg-ink
-                text-cream
-                text-sm
-                font-medium
-                hover:bg-amber-dark
-                transition-colors
-              "
-            >
-              <LogIn size={15} />
-              Login
-            </Link>
+                {/* WISHLIST */}
 
-            {/* REGISTER */}
+                <Link
+                  to="/wishlist"
+                  className="
+                    relative
+                    w-10
+                    h-10
+                    rounded-full
+                    flex
+                    items-center
+                    justify-center
+                    text-ink-soft
+                    hover:bg-white
+                    hover:text-rose
+                    transition-colors
+                  "
+                  aria-label="Liked crafts"
+                  title="Liked Crafts"
+                >
+                  <Heart
+                    size={19}
+                    className={
+                      wishlistCount > 0
+                        ? "text-rose fill-rose"
+                        : ""
+                    }
+                  />
 
-            <Link
-              to="/register"
-              className="
-                inline-flex
-                items-center
-                gap-2
-                px-5
-                py-2.5
-                rounded-full
-                bg-forest
-                text-white
-                text-sm
-                font-medium
-                hover:opacity-90
-                transition-all
-              "
-            >
-              <UserPlus size={15} />
-              Register
-            </Link>
+                  {wishlistCount > 0 && (
+                    <span
+                      className="
+                        absolute
+                        -top-1
+                        -right-1
+                        min-w-[18px]
+                        h-[18px]
+                        px-1
+                        rounded-full
+                        bg-rose
+                        text-white
+                        text-[10px]
+                        font-bold
+                        flex
+                        items-center
+                        justify-center
+                      "
+                    >
+                      {wishlistCount > 99
+                        ? "99+"
+                        : wishlistCount}
+                    </span>
+                  )}
+                </Link>
+
+                {/* CART */}
+
+                <Link
+                  to="/cart"
+                  className="
+                    relative
+                    w-10
+                    h-10
+                    rounded-full
+                    flex
+                    items-center
+                    justify-center
+                    text-ink-soft
+                    hover:bg-white
+                    hover:text-ink
+                    transition-colors
+                  "
+                  aria-label="Shopping cart"
+                  title="Shopping Cart"
+                >
+                  <ShoppingBag size={19} />
+
+                  {cartCount > 0 && (
+                    <span
+                      className="
+                        absolute
+                        -top-1
+                        -right-1
+                        min-w-[18px]
+                        h-[18px]
+                        px-1
+                        rounded-full
+                        bg-amber-dark
+                        text-white
+                        text-[10px]
+                        font-bold
+                        flex
+                        items-center
+                        justify-center
+                      "
+                    >
+                      {cartCount > 99
+                        ? "99+"
+                        : cartCount}
+                    </span>
+                  )}
+                </Link>
+
+                {!user ? (
+                  <>
+                    {/* LOGIN */}
+
+                    <Link
+                      to="/login"
+                      className="
+                        inline-flex
+                        items-center
+                        gap-2
+                        px-5
+                        py-2.5
+                        rounded-full
+                        bg-ink
+                        text-cream
+                        text-sm
+                        font-medium
+                        hover:bg-amber-dark
+                        transition-colors
+                      "
+                    >
+                      <LogIn size={15} />
+                      Login
+                    </Link>
+
+                    {/* REGISTER */}
+
+                    <Link
+                      to="/register"
+                      className="
+                        inline-flex
+                        items-center
+                        gap-2
+                        px-5
+                        py-2.5
+                        rounded-full
+                        bg-forest
+                        text-white
+                        text-sm
+                        font-medium
+                        hover:opacity-90
+                        transition-all
+                      "
+                    >
+                      <UserPlus size={15} />
+                      Register
+                    </Link>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="
+                      inline-flex
+                      items-center
+                      gap-1.5
+                      px-4
+                      py-2
+                      rounded-full
+                      border
+                      border-border
+                      text-ink-soft
+                      hover:bg-white
+                      hover:text-rose
+                      text-xs
+                      font-medium
+                      ml-2
+                      transition-colors
+                    "
+                  >
+                    <LogOut size={14} />
+                    Logout
+                  </button>
+                )}
+              </>
+            )}
           </div>
 
           {/* MOBILE ACTIONS */}
@@ -354,124 +505,128 @@ export default function Navbar() {
           >
             <NotificationBell />
 
-            {/* MOBILE PROFILE */}
+            {!isCreator && (
+              <>
+                {/* MOBILE PROFILE */}
 
-            <Link
-              to="/customer-profile"
-              onClick={closeMobileMenu}
-              className="
-                w-10
-                h-10
-                rounded-full
-                flex
-                items-center
-                justify-center
-                text-ink-soft
-                hover:bg-white
-              "
-              aria-label="Customer profile"
-            >
-              <UserRound size={19} />
-            </Link>
-
-            {/* MOBILE WISHLIST */}
-
-            <Link
-              to="/wishlist"
-              onClick={closeMobileMenu}
-              className="
-                relative
-                w-10
-                h-10
-                rounded-full
-                flex
-                items-center
-                justify-center
-                text-ink-soft
-                hover:bg-white
-              "
-              aria-label="Liked crafts"
-            >
-              <Heart
-                size={19}
-                className={
-                  wishlistCount > 0
-                    ? "text-rose fill-rose"
-                    : ""
-                }
-              />
-
-              {wishlistCount > 0 && (
-                <span
+                <Link
+                  to="/customer-profile"
+                  onClick={closeMobileMenu}
                   className="
-                    absolute
-                    top-0
-                    right-0
-                    min-w-[17px]
-                    h-[17px]
-                    px-1
+                    w-10
+                    h-10
                     rounded-full
-                    bg-rose
-                    text-white
-                    text-[9px]
-                    font-bold
                     flex
                     items-center
                     justify-center
+                    text-ink-soft
+                    hover:bg-white
                   "
+                  aria-label="Customer profile"
                 >
-                  {wishlistCount > 99
-                    ? "99+"
-                    : wishlistCount}
-                </span>
-              )}
-            </Link>
+                  <UserRound size={19} />
+                </Link>
 
-            {/* MOBILE CART */}
+                {/* MOBILE WISHLIST */}
 
-            <Link
-              to="/cart"
-              onClick={closeMobileMenu}
-              className="
-                relative
-                w-10
-                h-10
-                rounded-full
-                flex
-                items-center
-                justify-center
-                text-ink-soft
-                hover:bg-white
-              "
-              aria-label="Shopping cart"
-            >
-              <ShoppingBag size={19} />
-
-              {cartCount > 0 && (
-                <span
+                <Link
+                  to="/wishlist"
+                  onClick={closeMobileMenu}
                   className="
-                    absolute
-                    top-0
-                    right-0
-                    min-w-[17px]
-                    h-[17px]
-                    px-1
+                    relative
+                    w-10
+                    h-10
                     rounded-full
-                    bg-amber-dark
-                    text-white
-                    text-[9px]
-                    font-bold
                     flex
                     items-center
                     justify-center
+                    text-ink-soft
+                    hover:bg-white
                   "
+                  aria-label="Liked crafts"
                 >
-                  {cartCount > 99
-                    ? "99+"
-                    : cartCount}
-                </span>
-              )}
-            </Link>
+                  <Heart
+                    size={19}
+                    className={
+                      wishlistCount > 0
+                        ? "text-rose fill-rose"
+                        : ""
+                    }
+                  />
+
+                  {wishlistCount > 0 && (
+                    <span
+                      className="
+                        absolute
+                        top-0
+                        right-0
+                        min-w-[17px]
+                        h-[17px]
+                        px-1
+                        rounded-full
+                        bg-rose
+                        text-white
+                        text-[9px]
+                        font-bold
+                        flex
+                        items-center
+                        justify-center
+                      "
+                    >
+                      {wishlistCount > 99
+                        ? "99+"
+                        : wishlistCount}
+                    </span>
+                  )}
+                </Link>
+
+                {/* MOBILE CART */}
+
+                <Link
+                  to="/cart"
+                  onClick={closeMobileMenu}
+                  className="
+                    relative
+                    w-10
+                    h-10
+                    rounded-full
+                    flex
+                    items-center
+                    justify-center
+                    text-ink-soft
+                    hover:bg-white
+                  "
+                  aria-label="Shopping cart"
+                >
+                  <ShoppingBag size={19} />
+
+                  {cartCount > 0 && (
+                    <span
+                      className="
+                        absolute
+                        top-0
+                        right-0
+                        min-w-[17px]
+                        h-[17px]
+                        px-1
+                        rounded-full
+                        bg-amber-dark
+                        text-white
+                        text-[9px]
+                        font-bold
+                        flex
+                        items-center
+                        justify-center
+                      "
+                    >
+                      {cartCount > 99
+                        ? "99+"
+                        : cartCount}
+                    </span>
+                  )}
+                </Link>
+              </>
+            )}
 
             {/* MOBILE MENU BUTTON */}
 
@@ -522,7 +677,7 @@ export default function Navbar() {
                 gap-1
               "
             >
-              {navItems.map((item) => (
+              {currentNavItems.map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}
@@ -561,135 +716,186 @@ export default function Navbar() {
                 Notifications
               </Link>
 
-              {/* PROFILE */}
+              {!isCreator && (
+                <>
+                  {/* ORDERS (MOBILE) */}
 
-              <Link
-                to="/customer-profile"
-                onClick={closeMobileMenu}
-                className="
-                  flex
-                  items-center
-                  gap-3
-                  px-4
-                  py-3
-                  rounded-xl
-                  text-sm
-                  text-ink-soft
-                  hover:bg-white
-                "
-              >
-                <UserRound size={17} />
-                My Profile
-              </Link>
+                  <Link
+                    to="/orders"
+                    onClick={closeMobileMenu}
+                    className="
+                      flex
+                      items-center
+                      gap-3
+                      px-4
+                      py-3
+                      rounded-xl
+                      text-sm
+                      text-ink-soft
+                      hover:bg-white
+                    "
+                  >
+                    <Package size={17} />
+                    My Orders
+                  </Link>
 
-              {/* WISHLIST */}
+                  {/* PROFILE */}
 
-              <Link
-                to="/wishlist"
-                onClick={closeMobileMenu}
-                className="
-                  flex
-                  items-center
-                  gap-3
-                  px-4
-                  py-3
-                  rounded-xl
-                  text-sm
-                  text-ink-soft
-                  hover:bg-white
-                "
-              >
-                <Heart
-                  size={17}
-                  className={
-                    wishlistCount > 0
-                      ? "text-rose fill-rose"
-                      : ""
-                  }
-                />
+                  <Link
+                    to="/customer-profile"
+                    onClick={closeMobileMenu}
+                    className="
+                      flex
+                      items-center
+                      gap-3
+                      px-4
+                      py-3
+                      rounded-xl
+                      text-sm
+                      text-ink-soft
+                      hover:bg-white
+                    "
+                  >
+                    <UserRound size={17} />
+                    My Profile
+                  </Link>
 
-                Liked Crafts
+                  {/* WISHLIST */}
 
-                {wishlistCount > 0 && (
-                  <span className="ml-auto text-xs text-rose font-semibold">
-                    {wishlistCount}
-                  </span>
-                )}
-              </Link>
+                  <Link
+                    to="/wishlist"
+                    onClick={closeMobileMenu}
+                    className="
+                      flex
+                      items-center
+                      gap-3
+                      px-4
+                      py-3
+                      rounded-xl
+                      text-sm
+                      text-ink-soft
+                      hover:bg-white
+                    "
+                  >
+                    <Heart
+                      size={17}
+                      className={
+                        wishlistCount > 0
+                          ? "text-rose fill-rose"
+                          : ""
+                      }
+                    />
 
-              {/* CART */}
+                    Liked Crafts
 
-              <Link
-                to="/cart"
-                onClick={closeMobileMenu}
-                className="
-                  flex
-                  items-center
-                  gap-3
-                  px-4
-                  py-3
-                  rounded-xl
-                  text-sm
-                  text-ink-soft
-                  hover:bg-white
-                "
-              >
-                <ShoppingBag size={17} />
-                Cart
+                    {wishlistCount > 0 && (
+                      <span className="ml-auto text-xs text-rose font-semibold">
+                        {wishlistCount}
+                      </span>
+                    )}
+                  </Link>
 
-                {cartCount > 0 && (
-                  <span className="ml-auto text-xs text-amber-dark font-semibold">
-                    {cartCount}
-                  </span>
-                )}
-              </Link>
+                  {/* CART */}
 
-              {/* LOGIN */}
+                  <Link
+                    to="/cart"
+                    onClick={closeMobileMenu}
+                    className="
+                      flex
+                      items-center
+                      gap-3
+                      px-4
+                      py-3
+                      rounded-xl
+                      text-sm
+                      text-ink-soft
+                      hover:bg-white
+                    "
+                  >
+                    <ShoppingBag size={17} />
+                    Cart
 
-              <Link
-                to="/login"
-                onClick={closeMobileMenu}
-                className="
-                  mt-2
-                  flex
-                  items-center
-                  justify-center
-                  gap-2
-                  px-5
-                  py-3
-                  rounded-full
-                  bg-ink
-                  text-cream
-                  text-sm
-                  font-medium
-                "
-              >
-                <LogIn size={16} />
-                Login
-              </Link>
+                    {cartCount > 0 && (
+                      <span className="ml-auto text-xs text-amber-dark font-semibold">
+                        {cartCount}
+                      </span>
+                    )}
+                  </Link>
+                </>
+              )}
 
-              {/* REGISTER */}
+              {user ? (
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="
+                    mt-3
+                    flex
+                    items-center
+                    justify-center
+                    gap-2
+                    px-5
+                    py-3
+                    rounded-full
+                    bg-rose/10
+                    text-rose
+                    text-sm
+                    font-medium
+                  "
+                >
+                  <LogOut size={16} />
+                  Logout
+                </button>
+              ) : (
+                <>
+                  {/* LOGIN */}
 
-              <Link
-                to="/register"
-                onClick={closeMobileMenu}
-                className="
-                  flex
-                  items-center
-                  justify-center
-                  gap-2
-                  px-5
-                  py-3
-                  rounded-full
-                  bg-forest
-                  text-white
-                  text-sm
-                  font-medium
-                "
-              >
-                <UserPlus size={16} />
-                Register
-              </Link>
+                  <Link
+                    to="/login"
+                    onClick={closeMobileMenu}
+                    className="
+                      mt-2
+                      flex
+                      items-center
+                      justify-center
+                      gap-2
+                      px-5
+                      py-3
+                      rounded-full
+                      bg-ink
+                      text-cream
+                      text-sm
+                      font-medium
+                    "
+                  >
+                    <LogIn size={16} />
+                    Login
+                  </Link>
+
+                  {/* REGISTER */}
+
+                  <Link
+                    to="/register"
+                    onClick={closeMobileMenu}
+                    className="
+                      flex
+                      items-center
+                      justify-center
+                      gap-2
+                      px-5
+                      py-3
+                      rounded-full
+                      bg-forest
+                      text-white
+                      text-sm
+                      font-medium
+                    "
+                  >
+                    <UserPlus size={16} />
+                    Register
+                  </Link>
+                </>
+              )}
             </nav>
           </div>
         )}
