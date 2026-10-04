@@ -4,13 +4,13 @@ import {
 } from "react-router-dom";
 
 import {
-  Heart,
-  ShoppingBag,
   Menu,
   X,
+  ShoppingBag,
+  Heart,
+  UserRound,
   LogIn,
   UserPlus,
-  UserRound,
 } from "lucide-react";
 
 import { useState } from "react";
@@ -95,6 +95,7 @@ export default function Navbar() {
             gap-4
           "
         >
+
           {/* LOGO */}
 
           <Link
@@ -114,6 +115,7 @@ export default function Navbar() {
               Connect
             </span>
           </Link>
+
 
           {/* DESKTOP NAV */}
 
@@ -142,6 +144,7 @@ export default function Navbar() {
             ))}
           </nav>
 
+
           {/* DESKTOP ACTIONS */}
 
           <div
@@ -153,7 +156,9 @@ export default function Navbar() {
               shrink-0
             "
           >
+
             <NotificationBell />
+
 
             {/* PROFILE */}
 
@@ -195,6 +200,7 @@ export default function Navbar() {
                 "
               />
             </Link>
+
 
             {/* WISHLIST */}
 
@@ -251,6 +257,7 @@ export default function Navbar() {
               )}
             </Link>
 
+
             {/* CART */}
 
             <Link
@@ -299,6 +306,7 @@ export default function Navbar() {
               )}
             </Link>
 
+
             {/* LOGIN */}
 
             <Link
@@ -322,6 +330,7 @@ export default function Navbar() {
               Login
             </Link>
 
+
             {/* REGISTER */}
 
             <Link
@@ -344,7 +353,9 @@ export default function Navbar() {
               <UserPlus size={15} />
               Register
             </Link>
+
           </div>
+
 
           {/* MOBILE ACTIONS */}
 
@@ -356,7 +367,9 @@ export default function Navbar() {
               gap-1
             "
           >
+
             <NotificationBell />
+
 
             {/* MOBILE PROFILE */}
 
@@ -377,6 +390,7 @@ export default function Navbar() {
             >
               <UserRound size={19} />
             </Link>
+
 
             {/* MOBILE WISHLIST */}
 
@@ -431,6 +445,7 @@ export default function Navbar() {
               )}
             </Link>
 
+
             {/* MOBILE CART */}
 
             <Link
@@ -477,6 +492,7 @@ export default function Navbar() {
               )}
             </Link>
 
+
             {/* MOBILE MENU BUTTON */}
 
             <button
@@ -504,8 +520,11 @@ export default function Navbar() {
                 <Menu size={21} />
               )}
             </button>
+
           </div>
+
         </div>
+
 
         {/* MOBILE MENU */}
 
@@ -519,6 +538,7 @@ export default function Navbar() {
               animate-fade-up
             "
           >
+
             <nav
               className="
                 flex
@@ -526,6 +546,7 @@ export default function Navbar() {
                 gap-1
               "
             >
+
               {navItems.map((item) => (
                 <NavLink
                   key={item.path}
@@ -542,6 +563,7 @@ export default function Navbar() {
                   {item.label}
                 </NavLink>
               ))}
+
 
               {/* NOTIFICATIONS */}
 
@@ -565,6 +587,7 @@ export default function Navbar() {
                 Notifications
               </Link>
 
+
               {/* PROFILE */}
 
               <Link
@@ -585,6 +608,7 @@ export default function Navbar() {
                 <UserRound size={17} />
                 My Profile
               </Link>
+
 
               {/* WISHLIST */}
 
@@ -621,6 +645,7 @@ export default function Navbar() {
                 )}
               </Link>
 
+
               {/* CART */}
 
               <Link
@@ -648,6 +673,7 @@ export default function Navbar() {
                 )}
               </Link>
 
+
               {/* LOGIN */}
 
               <Link
@@ -672,6 +698,7 @@ export default function Navbar() {
                 Login
               </Link>
 
+
               {/* REGISTER */}
 
               <Link
@@ -694,13 +721,17 @@ export default function Navbar() {
                 <UserPlus size={16} />
                 Register
               </Link>
+
             </nav>
+
           </div>
         )}
+
       </div>
     </header>
   );
 }
+
 
 function BellIcon() {
   return (

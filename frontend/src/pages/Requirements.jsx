@@ -1,7 +1,10 @@
 // src/pages/Requirements.jsx
 
 import { useState, useMemo } from "react";
+/*import { useState } from "react";*/
+import { Link, useSearchParams } from "react-router-dom";
 import {
+  ArrowLeft,
   Sparkles,
   Layers,
   Filter,
@@ -11,10 +14,20 @@ import {
   RotateCcw,
   Palette,
   ArrowRight,
-  ArrowLeft,
+  /*ArrowLeft,*/
   CheckCircle2,
   Clock,
   Plus,
+  PlusCircle,
+  LayoutGrid,
+  Send,
+  Eye,
+  X,
+  Calendar,
+  MapPin,
+  /*Clock,
+  CheckCircle2,
+  Filter,*/
 } from "lucide-react";
 
 import Navbar from "../components/Navbar";
