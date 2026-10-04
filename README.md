@@ -1,10 +1,10 @@
-# MakerMatch – Custom Creator Workspace & Marketplace
+# CraftConnect – Custom Creator Workspace & Marketplace
 
 > Connecting Creativity with Customers through a Seamless Custom Order Journey — from Idea to Delivery.
 
 ## 📌 Overview
 
-MakerMatch is a web-based custom creator marketplace that connects customers with creators who provide customized and handmade products.
+CraftConnect is a web-based custom creator marketplace that connects customers with creators who provide customized and handmade products.
 
 Customers can describe what they want, discover suitable creators, request quotations, compare offers, approve designs, track production, and manage their orders through a single platform.
 
@@ -88,7 +88,7 @@ The platform is designed to make the complete custom-order process more organize
 ## 🏗️ Project Structure
 
 ```text
-MakerMatch/
+CraftConnect/
 │
 ├── backend/
 │   ├── src/
