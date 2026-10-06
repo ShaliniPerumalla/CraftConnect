@@ -10,7 +10,7 @@ const testimonials = [
   },
   {
     quote:
-      "Since opening my shop here, I've connected with buyers who actually care about how a piece is made. Orders have tripled and I still pack every box myself.",
+      "Since opening my shop here, I've connected with customers who actually care about how a piece is made. Orders have tripled and I still pack every box myself.",
     name: "Priya Nair",
     role: "Creator, Pottery",
   },

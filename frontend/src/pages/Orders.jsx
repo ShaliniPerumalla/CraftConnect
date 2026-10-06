@@ -13,6 +13,7 @@ import {
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { useOrders } from "../context/OrdersContext";
 
 // Temporary order data for the frontend.
 // Later this can be replaced with real backend/database data.
@@ -44,6 +45,7 @@ function getStatusClass(status) {
 }
 
 export default function Orders() {
+   const { orders } = useOrders();
   return (
     <div className="min-h-screen bg-cream font-body text-ink">
       {/* Main navigation */}
