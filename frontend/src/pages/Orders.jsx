@@ -140,8 +140,9 @@ export default function Orders() {
                 {/* ============================= */}
 
                 {orders.map((order) => {
-                  const total = order.price * order.quantity;
-
+                  const price = Number(order.price ?? 0);
+                  const quantity = Number(order.quantity ?? 1);
+                  const total = price * quantity;
                   return (
                     <article
                       key={order.id}
@@ -237,8 +238,8 @@ export default function Orders() {
                           </p>
 
                           <p className="text-xs text-ink-soft mt-1">
-                            ₹{order.price.toLocaleString("en-IN")} ×{" "}
-                            {order.quantity}
+                            ₹{price.toLocaleString("en-IN")} ×{" "}
+                            {quantity}
                           </p>
                         </div>
                       </div>

@@ -23,7 +23,7 @@ import { CraftsProvider } from "./context/CraftsContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import { OrdersProvider } from "./context/OrdersContext";
 import { NotificationProvider } from "./context/NotificationContext";
-
+import { RequirementQuotationProvider } from "./context/RequirementQuotationContext";
 // ======================================================
 // MAIN PAGES
 // ======================================================
@@ -116,7 +116,7 @@ export default function App() {
           <WishlistProvider>
             <CartProvider>
               <CraftsProvider>
-
+                <RequirementQuotationProvider>
                 <ScrollToTop />
 
                 <Routes>
@@ -307,7 +307,7 @@ export default function App() {
                   />
 
                 </Routes>
-
+                </RequirementQuotationProvider>
               </CraftsProvider>
             </CartProvider>
           </WishlistProvider>
