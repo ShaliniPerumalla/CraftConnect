@@ -1,7 +1,13 @@
-node_modules/
+venv/
+__pycache__/
+*.pyc
 .env
-.env.*
-!.env.example
-dist/
-logs/
-*.log
+db.sqlite3
+media/
+staticfiles/
+
+# Old Node/Express backend backup
+../backend_old/
+
+# Empty project documentation folder
+../docs/

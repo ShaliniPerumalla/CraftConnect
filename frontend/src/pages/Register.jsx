@@ -1,7 +1,7 @@
-// src/pages/Register.jsx
+import { useState } from "react";
+import useAuth from "../hooks/useAuth";
+import { Link, useNavigate } from "react-router-dom";
 
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import {
   User,
   Mail,
@@ -11,26 +11,44 @@ import {
   ArrowRight,
   Sparkles,
   Store,
-} from 'lucide-react';
+} from "lucide-react";
 
 export default function Register() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState('buyer');
+  const [role, setRole] = useState("customer");
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Frontend only for now.
-    // Backend registration will be connected later.
-    navigate('/login');
+    const formData = new FormData(e.currentTarget);
+
+    const userData = {
+      name: formData.get("name"),
+      email: formData.get("email"),
+      role,
+    };
+
+    // Frontend-only authentication for now.
+    // Django backend will replace this later.
+    login(userData);
+
+    if (role === "creator") {
+      navigate("/creator-dashboard");
+    } else {
+      navigate("/");
+    }
   };
 
   return (
     <div className="min-h-screen bg-cream flex">
 
-      {/* LEFT SIDE — Brand / Workshop */}
+      {/* ======================================================
+          LEFT SIDE — BRAND / WORKSHOP
+      ====================================================== */}
+
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-forest text-cream">
 
         {/* Decorative circles */}
@@ -67,6 +85,7 @@ export default function Register() {
               <span className="italic text-amber">
                 handmade story
               </span>
+
               <br />
 
               starts here.
@@ -111,8 +130,10 @@ export default function Register() {
         </div>
       </div>
 
+      {/* ======================================================
+          RIGHT SIDE — REGISTRATION FORM
+      ====================================================== */}
 
-      {/* RIGHT SIDE — Registration Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center px-5 py-10 sm:px-8">
 
         <div className="w-full max-w-md">
@@ -120,6 +141,7 @@ export default function Register() {
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
             <Link to="/" className="inline-flex items-center gap-2">
+
               <span className="font-display italic text-3xl text-ink">
                 Craft
               </span>
@@ -129,9 +151,9 @@ export default function Register() {
               </span>
 
               <span className="w-2 h-2 rounded-full bg-amber mt-4" />
+
             </Link>
           </div>
-
 
           {/* Heading */}
           <div className="text-center mb-8">
@@ -146,13 +168,15 @@ export default function Register() {
 
           </div>
 
-
           {/* Form card */}
           <div className="bg-white border border-border rounded-3xl p-6 sm:p-8 shadow-sm">
 
             <form onSubmit={handleSubmit} className="space-y-5">
 
-              {/* Name */}
+              {/* ======================================================
+                  NAME
+              ====================================================== */}
+
               <div>
                 <label className="block text-sm font-medium text-ink mb-2">
                   Full name
@@ -167,6 +191,7 @@ export default function Register() {
 
                   <input
                     type="text"
+                    name="name"
                     placeholder="Your name"
                     required
                     className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-border bg-cream/40 text-ink placeholder:text-ink-soft/60 outline-none focus:border-amber focus:ring-2 focus:ring-amber/10 transition"
@@ -175,8 +200,10 @@ export default function Register() {
                 </div>
               </div>
 
+              {/* ======================================================
+                  EMAIL
+              ====================================================== */}
 
-              {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-ink mb-2">
                   Email address
@@ -191,6 +218,7 @@ export default function Register() {
 
                   <input
                     type="email"
+                    name="email"
                     placeholder="you@example.com"
                     required
                     className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-border bg-cream/40 text-ink placeholder:text-ink-soft/60 outline-none focus:border-amber focus:ring-2 focus:ring-amber/10 transition"
@@ -199,9 +227,12 @@ export default function Register() {
                 </div>
               </div>
 
+              {/* ======================================================
+                  PASSWORD
+              ====================================================== */}
 
-              {/* Password */}
               <div>
+
                 <label className="block text-sm font-medium text-ink mb-2">
                   Password
                 </label>
@@ -214,7 +245,8 @@ export default function Register() {
                   />
 
                   <input
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
+                    name="password"
                     placeholder="Create a password"
                     required
                     minLength={6}
@@ -239,10 +271,13 @@ export default function Register() {
                 <p className="text-xs text-ink-soft mt-2">
                   Use at least 6 characters.
                 </p>
+
               </div>
 
+              {/* ======================================================
+                  ROLE
+              ====================================================== */}
 
-              {/* Role */}
               <div>
 
                 <label className="block text-sm font-medium text-ink mb-2">
@@ -251,18 +286,18 @@ export default function Register() {
 
                 <div className="grid grid-cols-2 gap-3">
 
-                  {/* Buyer */}
+                  {/* Customer */}
                   <button
                     type="button"
-                    onClick={() => setRole('buyer')}
+                    onClick={() => setRole("customer")}
                     className={`p-4 rounded-xl border text-left transition-all ${
-                      role === 'buyer'
-                        ? 'border-amber bg-amber-light/30 ring-2 ring-amber/10'
-                        : 'border-border bg-cream/30 hover:border-amber/50'
+                      role === "customer"
+                        ? "border-amber bg-amber-light/30 ring-2 ring-amber/10"
+                        : "border-border bg-cream/30 hover:border-amber/50"
                     }`}
                   >
                     <div className="font-medium text-ink text-sm">
-                      Buyer
+                      Customer
                     </div>
 
                     <div className="text-xs text-ink-soft mt-1">
@@ -270,15 +305,14 @@ export default function Register() {
                     </div>
                   </button>
 
-
                   {/* Creator */}
                   <button
                     type="button"
-                    onClick={() => setRole('creator')}
+                    onClick={() => setRole("creator")}
                     className={`p-4 rounded-xl border text-left transition-all ${
-                      role === 'creator'
-                        ? 'border-amber bg-amber-light/30 ring-2 ring-amber/10'
-                        : 'border-border bg-cream/30 hover:border-amber/50'
+                      role === "creator"
+                        ? "border-amber bg-amber-light/30 ring-2 ring-amber/10"
+                        : "border-border bg-cream/30 hover:border-amber/50"
                     }`}
                   >
                     <div className="font-medium text-ink text-sm">
@@ -291,11 +325,12 @@ export default function Register() {
                   </button>
 
                 </div>
-
               </div>
 
+              {/* ======================================================
+                  TERMS
+              ====================================================== */}
 
-              {/* Terms */}
               <label className="flex items-start gap-3 cursor-pointer">
 
                 <input
@@ -311,8 +346,10 @@ export default function Register() {
 
               </label>
 
+              {/* ======================================================
+                  SUBMIT
+              ====================================================== */}
 
-              {/* Submit */}
               <button
                 type="submit"
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-ink text-cream font-medium hover:bg-amber-dark transition-colors"
@@ -323,12 +360,11 @@ export default function Register() {
 
             </form>
 
-
             {/* Login link */}
             <div className="mt-6 pt-6 border-t border-border text-center">
 
               <p className="text-sm text-ink-soft">
-                Already have an account?{' '}
+                Already have an account?{" "}
 
                 <Link
                   to="/login"
@@ -343,7 +379,6 @@ export default function Register() {
 
           </div>
 
-
           {/* Back to home */}
           <div className="text-center mt-6">
 
@@ -357,7 +392,6 @@ export default function Register() {
           </div>
 
         </div>
-
       </div>
 
     </div>

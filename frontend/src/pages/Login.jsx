@@ -8,7 +8,7 @@ export default function Login() {
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState('buyer');
+  const [role, setRole] = useState('customer');
 
   const [formData, setFormData] = useState({
     email: '',
@@ -139,15 +139,15 @@ export default function Login() {
 
               <button
                 type="button"
-                onClick={() => setRole('buyer')}
+                onClick={() => setRole('customer')}
                 className={`p-4 rounded-xl border text-left transition-all ${
-                  role === 'buyer'
+                  role === 'customer'
                     ? 'border-terracotta bg-terracotta-light/20'
                     : 'border-border hover:border-terracotta/50'
                 }`}
               >
                 <p className="font-medium text-ink">
-                  Buyer
+                  Customer
                 </p>
 
                 <p className="text-xs text-ink-soft mt-1">
