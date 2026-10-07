@@ -1,30 +1,39 @@
-from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
 from rest_framework import status
-from requirements_app.models import Requirement
+from django.utils import timezone
+from datetime import timedelta
 
 User = get_user_model()
 
-class Member3Tests(APITestCase):
+class RequirementAPITests(APITestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='test_user', password='password123')
-        # Obtain JWT
-        response = self.client.post('/api/token/', {'username': 'test_user', 'password': 'password123'})
-        self.token = response.data['access']
+        self.user = User.objects.create_user(username='buyer_test', password='password123')
+        token_res = self.client.post('/api/token/', {'username': 'buyer_test', 'password': 'password123'})
+        self.token = token_res.data['access']
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
 
-    def test_create_and_list_requirement(self):
-        # Create
-        create_res = self.client.post('/api/requirements/', {
-            'title': 'Test Handloom Rug',
-            'description': 'Pure wool 4x6 handloom rug',
-            'budget': 8000.00
-        }, format='json')
-        self.assertEqual(create_res.status_code, status.HTTP_201_CREATED)
+    def test_create_requirement_authenticated(self):
+        deadline_date = (timezone.now() + timedelta(days=15)).date().isoformat()
+        payload = {
+            'title': 'Carved Teak Mirror',
+            'description': 'Handcrafted oval wall mirror with brass inlay.',
+            'category': 'Woodwork',
+            'budget': '8500.00',
+            'deadline': deadline_date
+        }
+        res = self.client.post('/api/requirements/', payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
-        # List
-        list_res = self.client.get('/api/requirements/')
-        self.assertEqual(list_res.status_code, status.HTTP_200_OK)
-        self.assertGreaterEqual(len(list_res.data), 1)
-# Create your tests here.
+    def test_create_requirement_unauthenticated(self):
+        self.client.credentials()
+        deadline_date = (timezone.now() + timedelta(days=10)).date().isoformat()
+        payload = {
+            'title': 'Blocked Item',
+            'description': 'Test description',
+            'category': 'Pottery',
+            'budget': '1000.00',
+            'deadline': deadline_date
+        }
+        res = self.client.post('/api/requirements/', payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from rest_framework import serializers
 from .models import Quotation
 
@@ -15,4 +16,6 @@ class QuotationSerializer(serializers.ModelSerializer):
         read_only_fields = ['creator', 'status', 'created_at', 'updated_at']
 
     def get_total_amount(self, obj):
-        return obj.price + obj.delivery_charge
+        price = Decimal(str(obj.price or 0))
+        delivery = Decimal(str(obj.delivery_charge or 0))
+        return price + delivery
