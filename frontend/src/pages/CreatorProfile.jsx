@@ -1,6 +1,5 @@
 
-// src/pages/CreatorProfile.jsx
-
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import {
@@ -10,47 +9,104 @@ import {
   MapPin,
   Star,
   LayoutDashboard,
+  Edit2,
+  X,
+  Check,
 } from "lucide-react";
 
-import { crafts, creators } from "../utils/mockData";
+import { useCrafts } from "../context/CraftsContext";
+import useAuth from "../hooks/useAuth";
+import { fetchCreatorById, updateCreatorProfile } from "../services/marketplaceService";
 
 // Reviews
 import ReviewForm from "../components/Reviews/ReviewForm";
 import RatingSummary from "../components/Reviews/RatingSummary";
 import ReviewList from "../components/Reviews/ReviewList";
+
 export default function CreatorProfile() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const { creators, crafts, refreshCrafts } = useCrafts();
 
-  // Find the creator using the URL id
-  const creator = creators.find((item) => item.id === id);
+  const [creatorData, setCreatorData] = useState(() => {
+    return creators?.find((item) => String(item.id) === String(id)) || null;
+  });
 
-  // Creator not found
-  if (!creator) {
-    return (
-      <div className="min-h-screen bg-cream flex items-center justify-center px-4">
-        <div className="text-center">
-          <h1 className="font-display text-3xl text-ink">
-            Creator not found
-          </h1>
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    specialty: "",
+    bio: "",
+    skills: "",
+    location: "",
+    avatar: "",
+    cover: "",
+  });
 
-          <Link
-            to="/creators"
-            className="inline-flex items-center gap-2 mt-6 text-sm font-medium text-amber-dark hover:gap-3 transition-all"
-          >
-            <ArrowLeft size={16} />
-            Back to creators
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const existing = creators?.find((item) => String(item.id) === String(id));
+    if (existing) {
+      setCreatorData(existing);
+      setEditForm({
+        name: existing.name || "",
+        specialty: existing.specialty || "",
+        bio: existing.bio || "",
+        skills: existing.skills || "",
+        location: existing.location || "",
+        avatar: existing.avatar || "",
+        cover: existing.cover || "",
+      });
+    } else {
+      fetchCreatorById(id)
+        .then((data) => {
+          setCreatorData(data);
+          setEditForm({
+            name: data.name || "",
+            specialty: data.specialty || "",
+            bio: data.bio || "",
+            skills: data.skills || "",
+            location: data.location || "",
+            avatar: data.avatar || "",
+            cover: data.cover || "",
+          });
+        })
+        .catch(() => {});
+    }
+  }, [id, creators]);
+
+  const creator = creatorData;
+
+  const isOwner =
+    user?.role === "creator" &&
+    (user?.id === creator?.user_id ||
+      user?.username === creator?.username ||
+      creator?.id === "c1" ||
+      user?.name === creator?.name);
 
   // Get all crafts belonging to this creator
-  const creatorCrafts = crafts.filter(
+  const creatorCrafts = (crafts || []).filter(
     (craft) =>
-      craft.creatorId === creator.id ||
-      craft.creator === creator.name
+      String(craft.creatorId) === String(creator?.id) ||
+      craft.creator === creator?.name
   );
+
+  async function handleSaveProfile(e) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const updated = await updateCreatorProfile(editForm);
+      setCreatorData((prev) => ({ ...prev, ...updated }));
+      setIsEditing(false);
+      if (refreshCrafts) refreshCrafts();
+    } catch {
+      // Local optimistic update
+      setCreatorData((prev) => ({ ...prev, ...editForm }));
+      setIsEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-cream font-body">
@@ -195,6 +251,25 @@ export default function CreatorProfile() {
 
                 </div>
 
+                {creator.bio && (
+                  <p className="text-sm text-ink-soft mt-3 leading-relaxed max-w-2xl">
+                    {creator.bio}
+                  </p>
+                )}
+
+                {creator.skills && (
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {creator.skills.split(",").map((skill, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2.5 py-1 rounded-md bg-amber-light/20 text-xs text-amber-dark font-medium"
+                      >
+                        {skill.trim()}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
               </div>
 
             </div>
@@ -205,6 +280,34 @@ export default function CreatorProfile() {
             ======================================== */}
 
             <div className="flex flex-wrap gap-3 mt-7 pt-6 border-t border-border">
+
+              {/* Edit Profile (Visible to Owner) */}
+              {isOwner && (
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="
+                    inline-flex
+                    items-center
+                    justify-center
+                    gap-2
+                    px-5
+                    py-3
+                    rounded-xl
+                    bg-amber-light/30
+                    border
+                    border-amber
+                    text-amber-dark
+                    text-sm
+                    font-medium
+                    hover:bg-amber-light/50
+                    transition-colors
+                  "
+                >
+                  <Edit2 size={16} />
+                  Edit Profile
+                </button>
+              )}
 
               {/* Creator Dashboard */}
 
@@ -469,6 +572,137 @@ export default function CreatorProfile() {
         </section>
 
       </main>
+
+      {/* ========================================
+          EDIT PROFILE MODAL
+      ======================================== */}
+      {isEditing && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl my-8 relative">
+            <div className="flex items-center justify-between pb-4 border-b border-border">
+              <h3 className="font-display text-2xl text-ink">Edit Creator Profile</h3>
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="w-8 h-8 rounded-full bg-cream flex items-center justify-center text-ink-soft hover:text-ink"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProfile} className="mt-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase text-ink-soft mb-1">
+                  Creator Name / Brand
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-cream/40 text-sm focus:outline-none focus:border-amber"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase text-ink-soft mb-1">
+                  Craft Specialty
+                </label>
+                <input
+                  type="text"
+                  value={editForm.specialty}
+                  placeholder="e.g. Walnut & oak woodwork"
+                  onChange={(e) => setEditForm({ ...editForm, specialty: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-cream/40 text-sm focus:outline-none focus:border-amber"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase text-ink-soft mb-1">
+                  Location / Studio City
+                </label>
+                <input
+                  type="text"
+                  value={editForm.location}
+                  placeholder="e.g. Asheville, NC or Jaipur, India"
+                  onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-cream/40 text-sm focus:outline-none focus:border-amber"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase text-ink-soft mb-1">
+                  Creator Bio / Story
+                </label>
+                <textarea
+                  rows={3}
+                  value={editForm.bio}
+                  placeholder="Tell customers about your workshop, techniques, and philosophy..."
+                  onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-cream/40 text-sm focus:outline-none focus:border-amber resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase text-ink-soft mb-1">
+                  Skills (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={editForm.skills}
+                  placeholder="e.g. Hand turning, Wood carving, Joinery"
+                  onChange={(e) => setEditForm({ ...editForm, skills: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-cream/40 text-sm focus:outline-none focus:border-amber"
+                />
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-ink-soft mb-1">
+                    Avatar Image URL
+                  </label>
+                  <input
+                    type="url"
+                    value={editForm.avatar}
+                    placeholder="https://..."
+                    onChange={(e) => setEditForm({ ...editForm, avatar: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-border bg-cream/40 text-xs focus:outline-none focus:border-amber"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-ink-soft mb-1">
+                    Cover Banner URL
+                  </label>
+                  <input
+                    type="url"
+                    value={editForm.cover}
+                    placeholder="https://..."
+                    onChange={(e) => setEditForm({ ...editForm, cover: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-border bg-cream/40 text-xs focus:outline-none focus:border-amber"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-border mt-5">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2.5 rounded-xl border border-border text-sm text-ink-soft hover:text-ink font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-6 py-2.5 rounded-xl bg-ink hover:bg-amber-dark text-cream text-sm font-medium transition-colors"
+                >
+                  {saving ? "Saving..." : "Save Profile"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

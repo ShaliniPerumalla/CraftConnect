@@ -1,5 +1,3 @@
-// src/pages/AddCraft.jsx
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -8,36 +6,63 @@ import {
   Plus,
   Image as ImageIcon,
   Check,
+  Upload,
+  Loader2,
 } from "lucide-react";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-import { creators } from "../utils/mockData";
 import { useCrafts } from "../context/CraftsContext";
+import useAuth from "../hooks/useAuth";
+import { uploadMarketplaceImage } from "../services/marketplaceService";
 
 export default function AddCraft() {
   const navigate = useNavigate();
-
-  const { addCraft } = useCrafts();
+  const { user } = useAuth();
+  const { addCraft, categories, creators } = useCrafts();
 
   const currentCreator =
-    creators.find(
-      (creator) => creator.id === "c1"
-    ) || creators[0];
+    (user &&
+      creators?.find(
+        (c) =>
+          c.user_id === user.id ||
+          c.username === user.username ||
+          c.name === user.name
+      )) ||
+    creators?.[0] || { id: "c1", name: user?.name || "Independent Creator" };
 
   const [formData, setFormData] = useState({
     name: "",
     price: "",
     stock: "10",
-    category: "woodwork",
+    category: categories?.[0]?.id || "woodwork",
     materials: "",
     image: "",
     tag: "New",
   });
 
-  const [notification, setNotification] =
-    useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [notification, setNotification] = useState(false);
+
+  async function handleImageFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const res = await uploadMarketplaceImage(file);
+      if (res?.url) {
+        setFormData((prev) => ({ ...prev, image: res.url }));
+      }
+    } catch (err) {
+      console.warn("Image upload failed, please use direct URL:", err);
+      alert("Image upload failed. Please ensure file is an image under 5MB or paste a URL.");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   // ======================================================
   // INPUT CHANGE
@@ -56,7 +81,7 @@ export default function AddCraft() {
   // SUBMIT
   // ======================================================
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (!formData.name.trim()) {
@@ -74,43 +99,40 @@ export default function AddCraft() {
       return;
     }
 
-    const newCraft = addCraft({
-      name: formData.name.trim(),
+    setSubmitting(true);
+    try {
+      const newCraft = await addCraft({
+        name: formData.name.trim(),
+        price: Number(formData.price),
+        stock: Number(formData.stock),
+        category: formData.category,
+        materials:
+          formData.materials.trim() ||
+          "Hand-selected quality materials",
+        image:
+          formData.image.trim() ||
+          "https://images.unsplash.com/photo-1452860606245-08befc0ff44b?auto=format&fit=crop&w=800&q=80",
+        tag: formData.tag || "New",
+        creator: currentCreator.name,
+        creatorId: currentCreator.id,
+        rating: 5,
+        reviews: 0,
+      });
 
-      price: Number(formData.price),
+      if (!newCraft) {
+        setSubmitting(false);
+        return;
+      }
 
-      stock: Number(formData.stock),
+      setNotification(true);
 
-      category: formData.category,
-
-      materials:
-        formData.materials.trim() ||
-        "Hand-selected quality materials",
-
-      image:
-        formData.image.trim() ||
-        "https://images.unsplash.com/photo-1452860606245-08befc0ff44b?auto=format&fit=crop&w=800&q=80",
-
-      tag: formData.tag || "New",
-
-      creator: currentCreator.name,
-
-      creatorId: currentCreator.id,
-
-      rating: 5,
-
-      reviews: 0,
-    });
-
-    if (!newCraft) {
-      return;
+      setTimeout(() => {
+        navigate("/creator/crafts");
+      }, 1000);
+    } catch (err) {
+      console.error("Error creating craft:", err);
+      setSubmitting(false);
     }
-
-    setNotification(true);
-
-    setTimeout(() => {
-      navigate("/creator/crafts");
-    }, 1000);
   }
 
   return (
@@ -243,37 +265,11 @@ export default function AddCraft() {
                     onChange={handleChange}
                     className="w-full mt-2 px-4 py-3 rounded-xl border border-border bg-cream/40 outline-none focus:border-amber"
                   >
-                    <option value="woodwork">
-                      Woodwork
-                    </option>
-
-                    <option value="pottery">
-                      Pottery & Ceramics
-                    </option>
-
-                    <option value="jewelry">
-                      Jewelry
-                    </option>
-
-                    <option value="textiles">
-                      Textiles
-                    </option>
-
-                    <option value="wall-art">
-                      Wall Art
-                    </option>
-
-                    <option value="home-decor">
-                      Home Decor
-                    </option>
-
-                    <option value="candles">
-                      Candles & Bath
-                    </option>
-
-                    <option value="leather">
-                      Leather Goods
-                    </option>
+                    {categories?.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
                   </select>
 
                 </div>
@@ -335,29 +331,63 @@ export default function AddCraft() {
                 <div className="sm:col-span-2">
 
                   <label className="text-sm font-semibold">
-                    Image URL
+                    Product Image (Upload or Image URL)
                   </label>
 
-                  <div className="relative mt-2">
+                  <div className="mt-2 flex flex-col sm:flex-row gap-3">
 
-                    <ImageIcon
-                      size={17}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft"
-                    />
+                    <div className="relative flex-1">
 
-                    <input
-                      type="url"
-                      name="image"
-                      value={formData.image}
-                      onChange={handleChange}
-                      placeholder="https://..."
-                      className="w-full pl-11 pr-4 py-3 rounded-xl border border-border bg-cream/40 outline-none focus:border-amber"
-                    />
+                      <ImageIcon
+                        size={17}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft"
+                      />
+
+                      <input
+                        type="url"
+                        name="image"
+                        value={formData.image}
+                        onChange={handleChange}
+                        placeholder="https://... or upload from device"
+                        className="w-full pl-11 pr-4 py-3 rounded-xl border border-border bg-cream/40 outline-none focus:border-amber text-sm"
+                      />
+
+                    </div>
+
+                    <label className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-border bg-white hover:bg-cream cursor-pointer text-sm font-medium transition-colors">
+                      {uploading ? (
+                        <Loader2 size={16} className="animate-spin text-amber" />
+                      ) : (
+                        <Upload size={16} className="text-amber-dark" />
+                      )}
+                      <span>{uploading ? "Uploading..." : "Upload Image"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageFile}
+                        disabled={uploading}
+                        className="hidden"
+                      />
+                    </label>
 
                   </div>
 
+                  {formData.image && (
+                    <div className="mt-3 flex items-center gap-3 p-2 rounded-xl bg-amber-light/10 border border-amber/20">
+                      <img
+                        src={formData.image}
+                        alt="Preview"
+                        className="w-12 h-12 rounded-lg object-cover"
+                        onError={(e) => { e.currentTarget.style.display = "none"; }}
+                      />
+                      <span className="text-xs text-ink-soft truncate flex-1">
+                        {formData.image}
+                      </span>
+                    </div>
+                  )}
+
                   <p className="text-xs text-ink-soft mt-2">
-                    Leave empty to use a default craft image.
+                    Images are uploaded and saved securely. Leave empty for default.
                   </p>
 
                 </div>

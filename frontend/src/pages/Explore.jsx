@@ -1,7 +1,5 @@
-// src/pages/Explore.jsx
-
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useMemo, useState, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   SlidersHorizontal,
@@ -20,7 +18,11 @@ import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
 
 export default function Explore() {
-  const { crafts } = useCrafts();
+  const [searchParams] = useSearchParams();
+  const urlCategory = searchParams.get("category");
+  const urlSearch = searchParams.get("search") || searchParams.get("q");
+
+  const { crafts, categories: backendCategories, loading } = useCrafts();
 
   const {
     wishlist,
@@ -29,7 +31,7 @@ export default function Explore() {
 
   const { addToCart } = useCart();
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(urlSearch || "");
   const [category, setCategory] = useState("All Crafts");
   const [price, setPrice] = useState("");
   const [rating, setRating] = useState(0);
@@ -37,6 +39,23 @@ export default function Explore() {
 
   const [mobileFiltersOpen, setMobileFiltersOpen] =
     useState(false);
+
+  useEffect(() => {
+    if (urlCategory) {
+      const match = backendCategories?.find(
+        (c) =>
+          c.id?.toLowerCase() === urlCategory.toLowerCase() ||
+          c.name?.toLowerCase() === urlCategory.toLowerCase()
+      );
+      setCategory(match ? match.name : urlCategory);
+    }
+  }, [urlCategory, backendCategories]);
+
+  useEffect(() => {
+    if (urlSearch !== null && urlSearch !== undefined) {
+      setSearch(urlSearch);
+    }
+  }, [urlSearch]);
 
   // ======================================================
   // FILTER + SEARCH + SORT
@@ -410,6 +429,7 @@ export default function Explore() {
               rating={rating}
               setRating={setRating}
               onClear={clearFilters}
+              availableCategories={backendCategories}
             />
 
           </div>
@@ -430,6 +450,7 @@ export default function Explore() {
               rating={rating}
               setRating={setRating}
               onClear={clearFilters}
+              availableCategories={backendCategories}
             />
 
           </div>

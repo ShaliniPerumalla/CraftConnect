@@ -65,7 +65,17 @@ export default function FilterSidebar({
   rating,
   setRating,
   onClear,
+  availableCategories,
 }) {
+  const displayCategories =
+    Array.isArray(availableCategories) && availableCategories.length > 0
+      ? [
+          "All Crafts",
+          ...availableCategories.map((item) =>
+            typeof item === "string" ? item : item.name
+          ),
+        ]
+      : categories;
   return (
     <aside className="w-full lg:w-64 shrink-0">
 
@@ -113,7 +123,7 @@ export default function FilterSidebar({
 
         <div className="space-y-1.5">
 
-          {categories.map((item) => (
+          {displayCategories.map((item) => (
 
             <button
               key={item}
