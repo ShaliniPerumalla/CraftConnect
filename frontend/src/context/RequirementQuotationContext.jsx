@@ -10,6 +10,7 @@ import {
 
 import { useOrders } from "./OrdersContext";
 import { useNotifications } from "./NotificationContext";
+import * as member3Service from "../services/member3Service";
 
 const RequirementQuotationContext = createContext(null);
 
@@ -223,6 +224,50 @@ const initialQuotations = [
 // CONTEXT PROVIDER
 // ======================================================
 
+const mapStatusFromBackend = (status) => {
+  switch ((status || "").toLowerCase()) {
+    case "open":
+      return "Waiting for Quotations";
+    case "quoted":
+      return "Quotations Received";
+    case "accepted":
+      return "Quotation Accepted";
+    case "cancelled":
+      return "Cancelled";
+    default:
+      return "Waiting for Quotations";
+  }
+};
+
+const formatBackendRequirement = (bReq) => {
+  const formattedId = `REQ${String(bReq.id).padStart(3, "0")}`;
+  return {
+    id: formattedId,
+    backendId: bReq.id,
+    title: bReq.title,
+    category: bReq.category || "Custom Craft",
+    whatDoYouWant: bReq.title,
+    description: bReq.description || "",
+    images: bReq.reference_image
+      ? [bReq.reference_image]
+      : [
+          "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=800&q=80",
+        ],
+    budget: Number(bReq.budget) || 1500,
+    budgetMin: Number(bReq.budget) * 0.8 || 1000,
+    budgetMax: Number(bReq.budget) * 1.2 || 1500,
+    requiredDate: bReq.deadline || "2026-10-20",
+    deliveryLocation: bReq.delivery_address || "Ongole, Andhra Pradesh",
+    customer: {
+      name: bReq.customer_username || bReq.customer_email?.split("@")[0] || "Client",
+      email: bReq.customer_email || "customer@example.com",
+      phone: "+91 98451 22334",
+    },
+    status: mapStatusFromBackend(bReq.status),
+    createdAt: bReq.created_at || new Date().toISOString(),
+  };
+};
+
 export function RequirementQuotationProvider({ children }) {
   const { addOrder } = useOrders() || {};
   const { addNotification } = useNotifications() || {};
@@ -298,6 +343,84 @@ export function RequirementQuotationProvider({ children }) {
   }, [quotations]);
 
   // ======================================================
+  // SYNC WITH REAL DJANGO BACKEND (So Incognito Creator Sees All Orders!)
+  // ======================================================
+
+  useEffect(() => {
+    let isMounted = true;
+    const syncBackend = async () => {
+      try {
+        const backendReqs = await member3Service.fetchRequirements({
+          view: "marketplace",
+          role: activeRole,
+        });
+
+        if (isMounted && Array.isArray(backendReqs) && backendReqs.length > 0) {
+          const mapped = backendReqs.map(formatBackendRequirement);
+          setRequirements((prev) => {
+            const combined = [...mapped];
+            for (const p of prev) {
+              if (!combined.some((c) => c.id === p.id || c.title === p.title)) {
+                combined.push(p);
+              }
+            }
+            return combined;
+          });
+        }
+      } catch (e) {
+        console.warn("Backend requirement fetch skipped or failed:", e);
+      }
+
+      try {
+        const backendQuotes = await member3Service.fetchMyQuotations({ role: "creator" });
+        if (isMounted && Array.isArray(backendQuotes) && backendQuotes.length > 0) {
+          const mappedQuotes = backendQuotes.map((bq) => ({
+            id: `QT${String(bq.id).padStart(3, "0")}`,
+            backendId: bq.id,
+            requirementId: `REQ${String(bq.requirement).padStart(3, "0")}`,
+            quoteNumber: `QT-${bq.requirement}-${bq.id}`,
+            creator: {
+              id: bq.creator || "c1",
+              name: bq.creator_name || bq.creator_email?.split("@")[0] || "Artisan",
+              studioName: "Artisan Studio",
+              avatar: "https://i.pravatar.cc/150?img=32",
+              rating: 4.9,
+              reviewsCount: 52,
+              location: "Hyderabad, Telangana",
+              specialty: "Custom Crafts",
+            },
+            price: Number(bq.price),
+            deliveryCharge: Number(bq.delivery_charge || 0),
+            totalPrice: Number(bq.total_amount || bq.price),
+            productionTime: "5-7 Days",
+            estimatedCompletionDate: bq.estimated_delivery_date,
+            description: bq.description,
+            materials: "Natural artisan materials",
+            status: bq.status === "accepted" ? "Accepted" : bq.status === "rejected" ? "Declined" : "Pending",
+            createdAt: bq.created_at,
+          }));
+          setQuotations((prev) => {
+            const combined = [...mappedQuotes];
+            for (const p of prev) {
+              if (!combined.some((c) => c.id === p.id)) {
+                combined.push(p);
+              }
+            }
+            return combined;
+          });
+        }
+      } catch (e) {
+        console.warn("Backend quotation fetch skipped or failed:", e);
+      }
+    };
+
+    syncBackend();
+    return () => {
+      isMounted = false;
+    };
+  }, [activeRole]);
+
+  // ======================================================
   // ADD REQUIREMENT (Customer side)
   // ======================================================
 
@@ -332,6 +455,28 @@ export function RequirementQuotationProvider({ children }) {
     };
 
     setRequirements((prev) => [newRequirement, ...prev]);
+
+    // Save to Django database so Incognito and all other windows immediately see it!
+    member3Service
+      .createRequirement({
+        title: newRequirement.title,
+        description: newRequirement.description,
+        category: newRequirement.category,
+        budget: newRequirement.budget,
+        deadline: newRequirement.requiredDate,
+        delivery_address: newRequirement.deliveryLocation,
+        reference_image: newRequirement.images?.[0] || null,
+      })
+      .then((saved) => {
+        if (saved?.id) {
+          const mapped = formatBackendRequirement(saved);
+          setRequirements((prev) => [
+            mapped,
+            ...prev.filter((r) => r.id !== formattedId && r.id !== mapped.id),
+          ]);
+        }
+      })
+      .catch((e) => console.warn("Backend requirement sync failed:", e));
 
     if (addNotification) {
       addNotification({
@@ -404,6 +549,25 @@ export function RequirementQuotationProvider({ children }) {
     };
 
     setQuotations((prev) => [newQuotation, ...prev]);
+
+    // Always sync with Django backend database
+    const parsedReqId = parseInt(String(quoteData.requirementId).replace(/\D/g, ""), 10) || 1;
+    member3Service
+      .submitQuotation({
+        requirement: parsedReqId,
+        price: newQuotation.price,
+        delivery_charge: newQuotation.deliveryCharge,
+        estimated_delivery_date: newQuotation.estimatedCompletionDate,
+        description: `${newQuotation.description}\nMaterials: ${newQuotation.materials}\nTerms: ${newQuotation.terms}`,
+      })
+      .then((saved) => {
+        if (saved?.id) {
+          setQuotations((prev) =>
+            prev.map((q) => (q.id === quoteId ? { ...q, backendId: saved.id } : q))
+          );
+        }
+      })
+      .catch((e) => console.warn("Backend quotation sync failed:", e));
 
     // Update parent requirement status to "Quotations Received" if it was "Waiting"
     setRequirements((prev) =>

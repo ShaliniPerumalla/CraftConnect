@@ -3,8 +3,8 @@ import api from './api';
 // ==============================
 // 1. REQUIREMENTS APIS
 // ==============================
-export const fetchRequirements = async () => {
-  const response = await api.get('/requirements/');
+export const fetchRequirements = async (params = {}) => {
+  const response = await api.get('/requirements/', { params });
   return response.data;
 };
 
@@ -18,6 +18,11 @@ export const fetchRequirementDetails = async (id) => {
   return response.data;
 };
 
+export const updateRequirement = async (id, data) => {
+  const response = await api.patch(`/requirements/${id}/`, data);
+  return response.data;
+};
+
 export const cancelRequirement = async (id) => {
   const response = await api.delete(`/requirements/${id}/`);
   return response.data;
@@ -26,8 +31,18 @@ export const cancelRequirement = async (id) => {
 // ==============================
 // 2. QUOTATIONS APIS
 // ==============================
+export const fetchMyQuotations = async (params = { role: 'creator' }) => {
+  const response = await api.get('/quotations/', { params });
+  return response.data;
+};
+
 export const submitQuotation = async (quotationData) => {
   const response = await api.post('/quotations/', quotationData);
+  return response.data;
+};
+
+export const updateQuotation = async (quotationId, quotationData) => {
+  const response = await api.patch(`/quotations/${quotationId}/`, quotationData);
   return response.data;
 };
 

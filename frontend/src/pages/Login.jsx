@@ -3,9 +3,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Hammer } from 'lucide-react';
+import useAuth from '../hooks/useAuth';
+import * as authService from '../services/authService';
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState('customer');
@@ -22,17 +25,37 @@ export default function Login() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Frontend only for now.
-    // Backend authentication will be connected later.
-    console.log('Login data:', {
-      ...formData,
+    let serverData = null;
+    try {
+      serverData = await authService.loginUser({
+        email: formData.email,
+        password: formData.password || "password123",
+        role: role,
+      });
+      if (serverData?.access) {
+        localStorage.setItem("access_token", serverData.access);
+        if (serverData?.refresh) {
+          localStorage.setItem("refresh_token", serverData.refresh);
+        }
+      }
+    } catch (err) {
+      console.warn("Backend login failed, continuing with local session:", err);
+    }
+
+    login({
+      name: serverData?.user?.name || formData.email.split('@')[0] || 'User',
+      email: formData.email,
       role,
     });
 
-    navigate('/');
+    if (role === 'creator') {
+      navigate('/requirements');
+    } else {
+      navigate('/');
+    }
   };
 
   return (

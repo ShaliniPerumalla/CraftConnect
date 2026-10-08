@@ -9,14 +9,35 @@ class ConversationListCreateView(generics.ListCreateAPIView):
     serializer_class = ConversationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_serializer_context(self):
+        return {'request': self.request}
+
     def get_queryset(self):
         user = self.request.user
         return Conversation.objects.filter(Q(customer=user) | Q(creator=user))
 
     def create(self, request, *args, **kwargs):
-        customer_id = request.data.get('customer') or request.user.id
+        customer_id = request.data.get('customer')
         creator_id = request.data.get('creator')
         requirement_id = request.data.get('requirement')
+
+        if requirement_id:
+            try:
+                from requirements_app.models import Requirement
+                req = Requirement.objects.get(id=requirement_id)
+                if not customer_id:
+                    customer_id = req.customer_id
+            except Exception:
+                pass
+
+        # If user is not customer, default creator to request.user if not specified
+        if not customer_id:
+            customer_id = request.user.id
+        elif not creator_id and customer_id != request.user.id:
+            creator_id = request.user.id
+
+        if not creator_id:
+            return Response({"error": "Creator must be specified for the conversation."}, status=status.HTTP_400_BAD_REQUEST)
 
         conversation, created = Conversation.objects.get_or_create(
             customer_id=customer_id,
@@ -24,7 +45,7 @@ class ConversationListCreateView(generics.ListCreateAPIView):
             requirement_id=requirement_id
         )
         return Response(
-            ConversationSerializer(conversation).data,
+            ConversationSerializer(conversation, context={'request': request}).data,
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
         )
 

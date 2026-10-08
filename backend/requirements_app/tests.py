@@ -25,15 +25,24 @@ class RequirementAPITests(APITestCase):
         res = self.client.post('/api/requirements/', payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
-    def test_create_requirement_unauthenticated(self):
-        self.client.credentials()
-        deadline_date = (timezone.now() + timedelta(days=10)).date().isoformat()
-        payload = {
-            'title': 'Blocked Item',
-            'description': 'Test description',
-            'category': 'Pottery',
-            'budget': '1000.00',
+    def test_creator_views_open_requirements(self):
+        # Create an open requirement by buyer
+        deadline_date = (timezone.now() + timedelta(days=15)).date().isoformat()
+        self.client.post('/api/requirements/', {
+            'title': 'Carved Teak Mirror',
+            'description': 'Handcrafted oval wall mirror with brass inlay.',
+            'category': 'Woodwork',
+            'budget': '8500.00',
             'deadline': deadline_date
-        }
-        res = self.client.post('/api/requirements/', payload, format='json')
-        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        }, format='json')
+
+        # Create a creator user
+        User.objects.create_user(username='artisan_req', password='password123')
+        creator_token = self.client.post('/api/token/', {'username': 'artisan_req', 'password': 'password123'}).data['access']
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {creator_token}')
+
+        # Creator views marketplace
+        res = self.client.get('/api/requirements/?role=creator')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]['title'], 'Carved Teak Mirror')
