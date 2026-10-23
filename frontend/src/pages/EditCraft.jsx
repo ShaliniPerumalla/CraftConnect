@@ -1,6 +1,6 @@
 // src/pages/EditCraft.jsx
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ArrowLeft,
   Save,
@@ -31,39 +31,17 @@ export default function EditCraft() {
 
   const craft = getCraftById(id);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    price: "",
-    stock: "",
-    category: "woodwork",
-    tag: "New",
-    materials: "",
-    image: "",
-  });
+  const [formData, setFormData] = useState(() => ({
+    name: craft?.name || "",
+    price: craft?.price ?? "",
+    stock: craft?.stock ?? 10,
+    category: craft?.category || "woodwork",
+    tag: craft?.tag || "New",
+    materials: craft?.materials || "",
+    image: craft?.image || "",
+  }));
 
   const [saving, setSaving] = useState(false);
-
-  // ======================================================
-  // LOAD CRAFT
-  // ======================================================
-
-  useEffect(() => {
-
-    if (!craft) {
-      return;
-    }
-
-    setFormData({
-      name: craft.name || "",
-      price: craft.price ?? "",
-      stock: craft.stock ?? 10,
-      category: craft.category || "woodwork",
-      tag: craft.tag || "New",
-      materials: craft.materials || "",
-      image: craft.image || "",
-    });
-
-  }, [craft]);
 
   // ======================================================
   // HANDLE CHANGE

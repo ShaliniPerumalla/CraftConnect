@@ -1,6 +1,6 @@
-# MakerMatch Backend
+# CraftConnect Backend
 
-Backend API for the MakerMatch custom creator marketplace.
+Backend API for the CraftConnect custom creator marketplace.
 
 ## Tech Stack
 

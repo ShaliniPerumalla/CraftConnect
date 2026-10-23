@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 
 export default function OrderSuccess() {
+  const orderNumber = "#CC-104721";
+
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center px-4">
 
@@ -45,7 +47,7 @@ export default function OrderSuccess() {
             </p>
 
             <p className="font-medium text-ink mt-1">
-              #CC-{Date.now().toString().slice(-6)}
+              {orderNumber}
             </p>
 
           </div>

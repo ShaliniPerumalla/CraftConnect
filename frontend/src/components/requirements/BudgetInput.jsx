@@ -1,7 +1,7 @@
 // src/components/requirements/BudgetInput.jsx
 
 import { useState } from "react";
-import { IndianRupee, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 const BUDGET_PRESETS = [
   { label: "₹500", value: 500 },

@@ -1,12 +1,8 @@
 // src/pages/Requirements.jsx
 
 import { useState, useMemo } from "react";
-/*import { useState } from "react";*/
-import { Link, useSearchParams } from "react-router-dom";
 import {
-  ArrowLeft,
   Sparkles,
-  Layers,
   Filter,
   Search,
   UserCheck,
@@ -14,20 +10,9 @@ import {
   RotateCcw,
   Palette,
   ArrowRight,
-  /*ArrowLeft,*/
-  CheckCircle2,
-  Clock,
+  ArrowLeft,
   Plus,
-  PlusCircle,
-  LayoutGrid,
-  Send,
-  Eye,
-  X,
-  Calendar,
-  MapPin,
-  /*Clock,
-  CheckCircle2,
-  Filter,*/
+  Clock,
 } from "lucide-react";
 
 import Navbar from "../components/Navbar";
@@ -165,7 +150,7 @@ export default function Requirements() {
           </div>
           <div className="flex-1">
             <p className="text-xs font-bold text-amber tracking-wide uppercase">
-              MakerMatch Studio Workflow
+              CraftConnect Studio Workflow
             </p>
             <p className="text-xs text-cream/90 mt-0.5 leading-relaxed">
               {toastMessage}

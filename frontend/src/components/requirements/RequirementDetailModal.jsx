@@ -1,16 +1,6 @@
 // src/components/requirements/RequirementDetailModal.jsx
 
-import {
-  X,
-  MapPin,
-  Calendar,
-  IndianRupee,
-  Clock,
-  Sparkles,
-  Send,
-  User,
-  CheckCircle,
-} from "lucide-react";
+import { X, Sparkles, Send } from "lucide-react";
 
 export default function RequirementDetailModal({
   requirement,
@@ -21,6 +11,13 @@ export default function RequirementDetailModal({
   onCompareQuotations,
 }) {
   if (!requirement) return null;
+
+  const submittedDate = requirement.createdAt
+    ? new Date(requirement.createdAt)
+    : null;
+  const submittedLabel = submittedDate && !Number.isNaN(submittedDate.getTime())
+    ? submittedDate.toLocaleDateString("en-IN")
+    : "Recently";
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
@@ -44,7 +41,7 @@ export default function RequirementDetailModal({
             {requirement.category}
           </span>
           <span className="text-xs text-ink-muted">
-            Submitted {new Date(requirement.createdAt || Date.now()).toLocaleDateString("en-IN")}
+            Submitted {submittedLabel}
           </span>
         </div>
 

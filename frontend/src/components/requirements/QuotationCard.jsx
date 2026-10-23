@@ -1,16 +1,6 @@
 // src/components/requirements/QuotationCard.jsx
 
-import {
-  Star,
-  Clock,
-  Truck,
-  CheckCircle,
-  FileText,
-  ShieldCheck,
-  Eye,
-  Check,
-  Sparkles,
-} from "lucide-react";
+import { Star, Clock, Truck, Eye, Check } from "lucide-react";
 
 export default function QuotationCard({
   quotation,
@@ -26,11 +16,9 @@ export default function QuotationCard({
     creator = {},
     price = 0,
     deliveryCharge = 0,
-    totalPrice = price + deliveryCharge,
     productionTime = "5 Days",
     materials = "Epoxy Resin + Wood",
     description = "",
-    terms = "",
     status = "Pending",
   } = quotation;
 
