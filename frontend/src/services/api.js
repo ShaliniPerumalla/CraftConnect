@@ -1,55 +1,43 @@
-const API_BASE_URL = "http://127.0.0.1:8000/api";
 
-async function request(endpoint, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      ...(options.headers || {}),
-    },
-  });
+import axios from "axios";
 
-  const data = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    const error = new Error(data?.detail || `Request failed: ${response.status}`);
-    error.response = { status: response.status, data };
-    throw error;
-  }
-
-  return { data };
-}
-
-const api = {
-  get: (endpoint, config = {}) => {
-    const params = new URLSearchParams(config.params || {});
-    const query = params.toString() ? `?${params.toString()}` : "";
-    return request(`${endpoint}${query}`);
+const api = axios.create({
+  baseURL:
+    import.meta.env.VITE_API_BASE_URL ||
+    "http://127.0.0.1:8000/api",
+  headers: {
+    "Content-Type": "application/json",
   },
+});
 
-  post: (endpoint, body, config = {}) =>
-    request(endpoint, {
-      method: "POST",
-      body: body instanceof FormData ? body : JSON.stringify(body),
-      headers:
-        body instanceof FormData
-          ? config.headers
-          : { "Content-Type": "application/json", ...(config.headers || {}) },
-    }),
+// Attach the saved JWT access token to requests.
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("access_token");
 
-  patch: (endpoint, body, config = {}) =>
-    request(endpoint, {
-      method: "PATCH",
-      body: body instanceof FormData ? body : JSON.stringify(body),
-      headers:
-        body instanceof FormData
-          ? config.headers
-          : { "Content-Type": "application/json", ...(config.headers || {}) },
-    }),
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
 
-  delete: (endpoint) =>
-    request(endpoint, {
-      method: "DELETE",
-    }),
-};
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Handle expired or invalid access tokens.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (
+      error.response?.status === 401 &&
+      error.response?.data?.code === "token_not_valid"
+    ) {
+      console.warn("Your access token has expired. Please log in again.");
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export default api;

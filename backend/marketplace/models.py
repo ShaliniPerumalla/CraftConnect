@@ -1,13 +1,14 @@
+
 import uuid
+
 from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
 
 
 class Category(models.Model):
-    """
-    Marketplace Category (e.g., Woodwork, Pottery, Jewelry, Textiles, Wall Art, etc.)
-    """
+    """Marketplace category such as woodwork, pottery, or jewelry."""
+
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=100, unique=True, blank=True)
     icon = models.CharField(max_length=50, blank=True, default="Package")
@@ -34,14 +35,12 @@ class Category(models.Model):
 
 
 class CreatorProfile(models.Model):
-    """
-    Creator Profile linked to the authenticated user.
-    Stores professional and storefront details for independent makers.
-    """
+    """Professional profile and storefront for an independent maker."""
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="creator_profile"
+        related_name="creator_profile",
     )
     name = models.CharField(max_length=150)
     specialty = models.CharField(max_length=200, blank=True)
@@ -56,7 +55,7 @@ class CreatorProfile(models.Model):
     categories = models.ManyToManyField(
         Category,
         related_name="creators",
-        blank=True
+        blank=True,
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -73,9 +72,8 @@ class CreatorProfile(models.Model):
 
 
 class Product(models.Model):
-    """
-    Handcrafted product or custom service listing created by an authenticated creator.
-    """
+    """Handcrafted product or custom service listing."""
+
     TAG_CHOICES = [
         ("New", "New"),
         ("Bestseller", "Bestseller"),
@@ -85,14 +83,14 @@ class Product(models.Model):
     creator = models.ForeignKey(
         CreatorProfile,
         on_delete=models.CASCADE,
-        related_name="products"
+        related_name="products",
     )
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="products"
+        related_name="products",
     )
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
@@ -116,14 +114,12 @@ class Product(models.Model):
 
 
 class ProductImage(models.Model):
-    """
-    Additional Cloudinary / media images for a product or custom craft.
-    Stores Cloudinary URL and public ID instead of raw image binaries.
-    """
+    """Additional product images stored as URLs."""
+
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
-        related_name="images"
+        related_name="images",
     )
     image_url = models.URLField(max_length=500)
     cloudinary_public_id = models.CharField(max_length=255, blank=True)

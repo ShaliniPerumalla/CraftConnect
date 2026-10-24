@@ -1,3 +1,4 @@
+
 from django.contrib import admin
 from .models import Category, CreatorProfile, Product, ProductImage
 
@@ -16,14 +17,37 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(CreatorProfile)
 class CreatorProfileAdmin(admin.ModelAdmin):
-    list_display = ["name", "user", "specialty", "location", "rating", "products_count", "is_verified"]
-    search_fields = ["name", "user__username", "specialty", "location", "skills"]
+    list_display = [
+        "name",
+        "user",
+        "specialty",
+        "location",
+        "rating",
+        "products_count",
+        "is_verified",
+    ]
+    search_fields = [
+        "name",
+        "user__username",
+        "specialty",
+        "location",
+        "skills",
+    ]
     list_filter = ["is_verified", "rating"]
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ["name", "creator", "category", "price", "stock", "tag", "rating", "is_active"]
+    list_display = [
+        "name",
+        "creator",
+        "category",
+        "price",
+        "stock",
+        "tag",
+        "rating",
+        "is_active",
+    ]
     search_fields = ["name", "description", "materials", "creator__name"]
     list_filter = ["category", "tag", "is_active"]
     inlines = [ProductImageInline]
@@ -31,5 +55,11 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(ProductImage)
 class ProductImageAdmin(admin.ModelAdmin):
-    list_display = ["product", "is_primary", "order", "image_url", "cloudinary_public_id"]
+    list_display = [
+        "product",
+        "is_primary",
+        "order",
+        "image_url",
+        "cloudinary_public_id",
+    ]
     list_filter = ["is_primary"]
