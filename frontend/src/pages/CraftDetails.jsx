@@ -16,15 +16,16 @@ import {
   Truck,
 } from "lucide-react";
 
-import { creators } from "../utils/mockData";
+import { creators as defaultCreators } from "../utils/mockData";
 import { useCrafts } from "../context/CraftsContext";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
+import { fetchProductById } from "../services/marketplaceService";
 
 export default function CraftDetails() {
   const { id } = useParams();
 
-  const { crafts } = useCrafts();
+  const { crafts, creators } = useCrafts();
   const { addToCart } = useCart();
 
   const {
@@ -33,23 +34,39 @@ export default function CraftDetails() {
   } = useWishlist();
 
   const [quantity, setQuantity] = useState(1);
+  const [notification, setNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [directCraft, setDirectCraft] = useState(null);
 
-  const [notification, setNotification] =
-    useState(false);
+  useEffect(() => {
+    const found = crafts?.find((item) => String(item.id) === String(id));
+    if (!found) {
+      fetchProductById(id)
+        .then((data) => {
+          if (data) setDirectCraft(data);
+        })
+        .catch(() => {});
+    }
+  }, [id, crafts]);
 
-  const [notificationMessage, setNotificationMessage] =
-    useState("");
+  const craft =
+    crafts.find((item) => String(item.id) === String(id)) || directCraft;
 
-  const craft = crafts.find(
-    (item) =>
-      String(item.id) === String(id)
-  );
-
+  const allCreators = Array.isArray(creators) && creators.length > 0 ? creators : defaultCreators;
   const creator = craft
-    ? creators.find(
+    ? allCreators.find(
         (item) =>
-          item.id === craft.creatorId
-      )
+          String(item.id) === String(craft.creatorId) ||
+          item.name === craft.creator
+      ) || {
+        id: craft.creatorId || "c1",
+        name: craft.creator || "Independent Creator",
+        specialty: "Custom craftsmanship",
+        location: craft.creator_location || "Local Workshop",
+        avatar: "https://i.pravatar.cc/150?img=32",
+        rating: craft.rating || 5,
+        products: 1,
+      }
     : null;
 
   const relatedCrafts = useMemo(() => {

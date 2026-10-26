@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { MapPin, Star, ArrowRight } from "lucide-react";
-import { creators } from "../utils/mockData";
+import { useCrafts } from "../context/CraftsContext";
 
 export default function FeaturedCreators() {
-  const featuredCreators = creators.slice(0, 4);
+  const { creators } = useCrafts();
+  const featuredCreators = (Array.isArray(creators) ? creators : []).slice(0, 4);
 
   return (
     <section className="bg-cream py-16 lg:py-20">
