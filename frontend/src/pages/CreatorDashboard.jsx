@@ -1,5 +1,4 @@
-// src/pages/CreatorDashboard.jsx
-
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -13,21 +12,42 @@ import {
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { creators } from "../utils/mockData";
 import { useCrafts } from "../context/CraftsContext";
+import useAuth from "../hooks/useAuth";
+import { fetchCurrentCreatorProfile } from "../services/marketplaceService";
 
 export default function CreatorDashboard() {
-  const { crafts } = useCrafts();
+  const { user } = useAuth();
+  const { crafts, creators } = useCrafts();
 
-  // Temporary logged-in creator
-  const currentCreator = creators.find(
-    (creator) => creator.id === "c1"
-  );
+  const [currentCreator, setCurrentCreator] = useState(() => {
+    if (user) {
+      const match = creators?.find(
+        (c) =>
+          c.user_id === user.id ||
+          c.username === user.username ||
+          c.name === user.name
+      );
+      if (match) return match;
+    }
+    return creators?.[0] || { name: user?.name || "Creator", id: "c1" };
+  });
+
+  useEffect(() => {
+    fetchCurrentCreatorProfile()
+      .then((profile) => {
+        if (profile && profile.name) {
+          setCurrentCreator(profile);
+        }
+      })
+      .catch(() => {});
+  }, [user]);
 
   // Only show this creator's crafts
   const myCrafts = crafts.filter(
     (craft) =>
-      craft.creatorId === currentCreator?.id
+      String(craft.creatorId) === String(currentCreator?.id) ||
+      craft.creator === currentCreator?.name
   );
 
   const totalStock = myCrafts.reduce(
