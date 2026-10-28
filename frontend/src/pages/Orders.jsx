@@ -13,6 +13,7 @@ import {
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { useOrders } from "../context/OrdersContext";
 
 // Temporary order data for the frontend.
 // Later this can be replaced with real backend/database data.
@@ -44,6 +45,7 @@ function getStatusClass(status) {
 }
 
 export default function Orders() {
+   const { orders } = useOrders();
   return (
     <div className="min-h-screen bg-cream font-body text-ink">
       {/* Main navigation */}
@@ -138,8 +140,9 @@ export default function Orders() {
                 {/* ============================= */}
 
                 {orders.map((order) => {
-                  const total = order.price * order.quantity;
-
+                  const price = Number(order.price ?? 0);
+                  const quantity = Number(order.quantity ?? 1);
+                  const total = price * quantity;
                   return (
                     <article
                       key={order.id}
@@ -235,8 +238,8 @@ export default function Orders() {
                           </p>
 
                           <p className="text-xs text-ink-soft mt-1">
-                            ₹{order.price.toLocaleString("en-IN")} ×{" "}
-                            {order.quantity}
+                            ₹{price.toLocaleString("en-IN")} ×{" "}
+                            {quantity}
                           </p>
                         </div>
                       </div>

@@ -1,331 +1,421 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+import * as member3Service from "../services/member3Service";
+import useAuth from "../hooks/useAuth";
 
 const ChatContext = createContext(null);
 
-const STORAGE_KEY = "craftconnect_chat";
+const STORAGE_CONVERSATIONS_KEY = "craftconnect_conversations";
+const STORAGE_MESSAGES_KEY = "craftconnect_messages";
 
-// ======================================================
-// INITIAL CONVERSATIONS
-// ======================================================
-
-const initialConversations = [
+const fallbackConversations = [
   {
-    id: "chat-1",
-    creatorId: "creator-1",
-    name: "Anu Crafts",
-    category: "Jewelry",
-    online: true,
-    lastMessage: "Sure! I'll update the design.",
-    lastMessageTime: "10:35 AM",
-    unread: 2,
-  },
-  {
-    id: "chat-2",
-    creatorId: "creator-2",
-    name: "XYZ Art",
-    category: "Resin Art",
-    online: true,
-    lastMessage: "Your design is ready.",
-    lastMessageTime: "9:20 AM",
+    id: 1,
+    name: "Priya Handmade Crafts",
+    lastMessage: "Sure, I can customize the design.",
+    lastMessageTime: "10:30 AM",
     unread: 1,
+    online: true,
   },
   {
-    id: "chat-3",
-    creatorId: "creator-3",
-    name: "Priya Creations",
-    category: "Handmade Gifts",
-    online: false,
-    lastMessage: "Thank you!",
+    id: 2,
+    name: "Creative Resin Studio",
+    lastMessage: "The quotation has been updated.",
     lastMessageTime: "Yesterday",
     unread: 0,
+    online: false,
   },
 ];
 
-// ======================================================
-// INITIAL MESSAGES
-// ======================================================
-
-const initialMessages = {
-  "chat-1": [
+const fallbackMessages = {
+  1: [
     {
-      id: "message-1",
+      id: 101,
       sender: "creator",
-      text: "Hello! I have uploaded the design.",
-      time: "10:32 AM",
-      attachment: null,
+      text: "Hi! How can I help you with your custom order?",
+      time: "10:25 AM",
     },
     {
-      id: "message-2",
+      id: 102,
       sender: "customer",
-      text: "Can you change the color?",
-      time: "10:34 AM",
-      attachment: null,
+      text: "I would like a customized handmade gift.",
+      time: "10:27 AM",
     },
     {
-      id: "message-3",
+      id: 103,
       sender: "creator",
-      text: "Sure! I'll update the design.",
-      time: "10:35 AM",
-      attachment: null,
+      text: "Sure, I can customize the design.",
+      time: "10:30 AM",
     },
   ],
-
-  "chat-2": [
+  2: [
     {
-      id: "message-4",
+      id: 201,
       sender: "creator",
-      text: "I've finished the resin design.",
-      time: "9:15 AM",
-      attachment: null,
+      text: "Hello! Feel free to share your requirements.",
+      time: "Yesterday",
     },
     {
-      id: "message-5",
-      sender: "creator",
-      text: "Your design is ready.",
-      time: "9:20 AM",
-      attachment: null,
-    },
-  ],
-
-  "chat-3": [
-    {
-      id: "message-6",
+      id: 202,
       sender: "customer",
-      text: "Thank you for the beautiful work!",
+      text: "I wanted to check the quotation.",
       time: "Yesterday",
-      attachment: null,
     },
     {
-      id: "message-7",
+      id: 203,
       sender: "creator",
-      text: "Thank you!",
+      text: "The quotation has been updated.",
       time: "Yesterday",
-      attachment: null,
     },
   ],
 };
 
-// ======================================================
-// PROVIDER
-// ======================================================
+function formatMessageTime(isoString) {
+  if (!isoString) return new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  try {
+    const d = new Date(isoString);
+    const now = new Date();
+    if (d.toDateString() === now.toDateString()) {
+      return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    }
+    return d.toLocaleDateString([], { month: "short", day: "numeric" });
+  } catch {
+    return isoString;
+  }
+}
 
 export function ChatProvider({ children }) {
+  const { user } = useAuth() || {};
+
   const [conversations, setConversations] = useState(() => {
     try {
-      const saved = localStorage.getItem(
-        `${STORAGE_KEY}_conversations`
-      );
-
-      if (!saved) {
-        return initialConversations;
-      }
-
-      const parsed = JSON.parse(saved);
-
-      return Array.isArray(parsed)
-        ? parsed
-        : initialConversations;
-    } catch (error) {
-      console.error(
-        "Could not load conversations:",
-        error
-      );
-
-      return initialConversations;
+      const saved = localStorage.getItem(STORAGE_CONVERSATIONS_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn("Could not load local conversations:", e);
     }
+    return fallbackConversations;
   });
 
   const [messages, setMessages] = useState(() => {
     try {
-      const saved = localStorage.getItem(
-        `${STORAGE_KEY}_messages`
-      );
-
-      if (!saved) {
-        return initialMessages;
-      }
-
-      const parsed = JSON.parse(saved);
-
-      return parsed || initialMessages;
-    } catch (error) {
-      console.error(
-        "Could not load messages:",
-        error
-      );
-
-      return initialMessages;
+      const saved = localStorage.getItem(STORAGE_MESSAGES_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn("Could not load local messages:", e);
     }
+    return fallbackMessages;
   });
 
-  const [activeConversationId, setActiveConversationId] =
-    useState("chat-1");
+  const [activeConversationId, setActiveConversationId] = useState(
+    conversations[0]?.id ?? null
+  );
 
-  // ======================================================
-  // SAVE CONVERSATIONS
-  // ======================================================
+  const [loadingConversations, setLoadingConversations] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [conversationsError, setConversationsError] = useState(null);
+  const [messagesError, setMessagesError] = useState(null);
 
+  // Sync to local storage
   useEffect(() => {
     try {
-      localStorage.setItem(
-        `${STORAGE_KEY}_conversations`,
-        JSON.stringify(conversations)
-      );
-    } catch (error) {
-      console.error(
-        "Could not save conversations:",
-        error
-      );
-    }
+      localStorage.setItem(STORAGE_CONVERSATIONS_KEY, JSON.stringify(conversations));
+    } catch {}
   }, [conversations]);
 
-  // ======================================================
-  // SAVE MESSAGES
-  // ======================================================
-
   useEffect(() => {
     try {
-      localStorage.setItem(
-        `${STORAGE_KEY}_messages`,
-        JSON.stringify(messages)
-      );
-    } catch (error) {
-      console.error(
-        "Could not save messages:",
-        error
-      );
-    }
+      localStorage.setItem(STORAGE_MESSAGES_KEY, JSON.stringify(messages));
+    } catch {}
   }, [messages]);
 
-  // ======================================================
-  // ACTIVE CONVERSATION
-  // ======================================================
+  // Transform backend conversation into clean UI item
+  const mapBackendConversation = useCallback(
+    (conv) => {
+      const isUserCreator = user?.role === "creator";
+      // Determine counterpart name
+      let displayName = "Artisan / Client";
+      if (isUserCreator) {
+        displayName = conv.customer_username || conv.customer_email || "Valued Client";
+      } else {
+        displayName = conv.creator_username || conv.creator_email || "Master Artisan";
+      }
+      if (conv.requirement_title) {
+        displayName += ` (${conv.requirement_title})`;
+      }
 
-  const activeConversation = useMemo(() => {
-    return conversations.find(
-      (conversation) =>
-        conversation.id === activeConversationId
-    );
-  }, [
-    conversations,
-    activeConversationId,
-  ]);
+      const lastMsgText = conv.last_message?.body || "Conversation started";
+      const lastMsgTime = conv.last_message?.timestamp
+        ? formatMessageTime(conv.last_message.timestamp)
+        : formatMessageTime(conv.updated_at);
 
-  // ======================================================
-  // ACTIVE MESSAGES
-  // ======================================================
+      return {
+        id: conv.id,
+        backendId: conv.id,
+        name: displayName,
+        customer: conv.customer,
+        creator: conv.creator,
+        requirement: conv.requirement,
+        lastMessage: lastMsgText,
+        lastMessageTime: lastMsgTime,
+        unread: conv.unread_count || 0,
+        online: true,
+      };
+    },
+    [user]
+  );
 
-  const activeMessages = useMemo(() => {
-    return messages[activeConversationId] || [];
-  }, [
-    messages,
-    activeConversationId,
-  ]);
+  // Load conversations from backend
+  const loadConversations = useCallback(async () => {
+    const token = localStorage.getItem("access_token");
+    if (!token) return; // If unauthenticated, use cached/fallback data
 
-  // ======================================================
-  // SELECT CONVERSATION
-  // ======================================================
+    setLoadingConversations(true);
+    setConversationsError(null);
 
-  function selectConversation(conversationId) {
-    setActiveConversationId(conversationId);
-
-    setConversations((current) =>
-      current.map((conversation) =>
-        conversation.id === conversationId
-          ? {
-              ...conversation,
-              unread: 0,
-            }
-          : conversation
-      )
-    );
-  }
-
-  // ======================================================
-  // SEND MESSAGE
-  // ======================================================
-
-  function sendMessage(text, attachment = null) {
-    const trimmedText = text.trim();
-
-    if (!trimmedText && !attachment) {
-      return;
+    try {
+      const data = await member3Service.fetchConversations();
+      if (Array.isArray(data) && data.length > 0) {
+        const mapped = data.map(mapBackendConversation);
+        setConversations(mapped);
+        if (!activeConversationId && mapped.length > 0) {
+          setActiveConversationId(mapped[0].id);
+        }
+      }
+    } catch (err) {
+      console.warn("Backend conversations fetch failed, using local/cached state:", err);
+      // Keep existing conversations
+      setConversationsError(err?.response?.data?.detail || "Could not refresh conversations from server.");
+    } finally {
+      setLoadingConversations(false);
     }
+  }, [activeConversationId, mapBackendConversation]);
 
-    const now = new Date();
+  // Load conversations on mount or when token changes
+  useEffect(() => {
+    loadConversations();
+  }, [loadConversations]);
 
-    const time = now.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  // Active conversation object
+  const activeConversation = useMemo(
+    () =>
+      conversations.find(
+        (conversation) => conversation.id === activeConversationId
+      ) || null,
+    [conversations, activeConversationId]
+  );
 
-    const newMessage = {
-      id: `message-${Date.now()}`,
-      sender: "customer",
-      text: trimmedText,
-      time,
-      attachment,
-    };
+  // Active messages list
+  const activeMessages = useMemo(
+    () => messages[activeConversationId] || [],
+    [messages, activeConversationId]
+  );
 
-    setMessages((current) => ({
-      ...current,
-      [activeConversationId]: [
-        ...(current[activeConversationId] || []),
-        newMessage,
-      ],
-    }));
+  // Load messages for a conversation
+  const loadMessagesForConversation = useCallback(
+    async (convId) => {
+      const token = localStorage.getItem("access_token");
+      if (!token) return;
 
-    setConversations((current) =>
-      current.map((conversation) =>
-        conversation.id === activeConversationId
-          ? {
-              ...conversation,
-              lastMessage:
-                trimmedText || "Attachment sent",
-              lastMessageTime: time,
-            }
-          : conversation
-      )
-    );
-  }
+      setLoadingMessages(true);
+      setMessagesError(null);
 
-  // ======================================================
-  // RESET CHAT
-  // ======================================================
+      try {
+        const backendMessages = await member3Service.fetchMessages(convId);
+        if (Array.isArray(backendMessages)) {
+          const mapped = backendMessages.map((msg) => ({
+            id: msg.id,
+            sender:
+              user?.id && msg.sender === user.id
+                ? user.role === "creator"
+                  ? "creator"
+                  : "customer"
+                : user?.role === "creator"
+                ? "customer"
+                : "creator",
+            text: msg.body,
+            attachment: msg.attachment_url
+              ? { name: msg.attachment_url.split("/").pop() || "Attachment", url: msg.attachment_url }
+              : null,
+            time: formatMessageTime(msg.timestamp),
+          }));
 
-  function resetChats() {
-    setConversations(
-      initialConversations.map((conversation) => ({
-        ...conversation,
-      }))
-    );
+          setMessages((current) => ({
+            ...current,
+            [convId]: mapped,
+          }));
 
-    setMessages(
-      JSON.parse(JSON.stringify(initialMessages))
-    );
+          // Mark as read in backend
+          member3Service.markMessagesAsRead(convId).catch(() => {});
+        }
+      } catch (err) {
+        console.warn(`Backend fetch messages for conv ${convId} failed, using local data:`, err);
+        setMessagesError("Could not sync latest messages with server.");
+      } finally {
+        setLoadingMessages(false);
+      }
+    },
+    [user]
+  );
 
-    setActiveConversationId("chat-1");
-  }
+  // Select a conversation
+  const selectConversation = useCallback(
+    (id) => {
+      setActiveConversationId(id);
 
-  // ======================================================
-  // CONTEXT VALUE
-  // ======================================================
+      // Reset unread count locally
+      setConversations((current) =>
+        current.map((c) => (c.id === id ? { ...c, unread: 0 } : c))
+      );
+
+      // Load backend messages
+      loadMessagesForConversation(id);
+    },
+    [loadMessagesForConversation]
+  );
+
+  // Send a message
+  const sendMessage = useCallback(
+    async (text, attachment = null) => {
+      if (!activeConversationId) return;
+
+      const timeString = formatMessageTime(new Date().toISOString());
+      const tempId = Date.now();
+
+      const newMsg = {
+        id: tempId,
+        sender: user?.role === "creator" ? "creator" : "customer",
+        text,
+        attachment,
+        time: timeString,
+      };
+
+      // Optimistic update
+      setMessages((current) => ({
+        ...current,
+        [activeConversationId]: [
+          ...(current[activeConversationId] || []),
+          newMsg,
+        ],
+      }));
+
+      // Update conversation list preview
+      setConversations((current) =>
+        current.map((c) =>
+          c.id === activeConversationId
+            ? {
+                ...c,
+                lastMessage: text || attachment?.name || "Attachment",
+                lastMessageTime: timeString,
+              }
+            : c
+        )
+      );
+
+      // Try sending to backend if authenticated
+      const token = localStorage.getItem("access_token");
+      if (token) {
+        try {
+          const payload = {
+            body: text,
+            attachment_url: attachment?.url || (attachment?.name ? `https://attachments.makermatch.internal/${attachment.name}` : null),
+          };
+          const savedMsg = await member3Service.sendMessage(activeConversationId, payload);
+          if (savedMsg?.id) {
+            // Update temporary id with server id
+            setMessages((current) => ({
+              ...current,
+              [activeConversationId]: (current[activeConversationId] || []).map((m) =>
+                m.id === tempId ? { ...m, id: savedMsg.id } : m
+              ),
+            }));
+          }
+        } catch (err) {
+          console.warn("Message sent locally; backend sync failed:", err);
+        }
+      }
+    },
+    [activeConversationId, user]
+  );
+
+  // Start or open a conversation with a participant / requirement
+  const startOrOpenConversation = useCallback(
+    async ({ customerId, creatorId, requirementId, requirementTitle, participantName }) => {
+      // 1. Check if conversation already exists in state
+      const existing = conversations.find(
+        (c) =>
+          (requirementId && c.requirement === requirementId) ||
+          (customerId && c.customer === customerId) ||
+          (creatorId && c.creator === creatorId)
+      );
+
+      if (existing) {
+        selectConversation(existing.id);
+        return existing.id;
+      }
+
+      // 2. Try starting in backend
+      const token = localStorage.getItem("access_token");
+      if (token) {
+        try {
+          const res = await member3Service.startConversation({
+            customer: customerId,
+            creator: creatorId,
+            requirement: requirementId,
+          });
+          if (res?.id) {
+            const mapped = mapBackendConversation(res);
+            setConversations((prev) => [mapped, ...prev.filter((c) => c.id !== mapped.id)]);
+            selectConversation(res.id);
+            return res.id;
+          }
+        } catch (err) {
+          console.warn("Could not start conversation in backend, creating locally:", err);
+        }
+      }
+
+      // 3. Fallback: Create locally
+      const localId = Date.now();
+      const localConv = {
+        id: localId,
+        name: participantName || (requirementTitle ? `Order #${requirementId}: ${requirementTitle}` : "MakerMatch Chat"),
+        lastMessage: "Conversation created",
+        lastMessageTime: formatMessageTime(new Date().toISOString()),
+        unread: 0,
+        online: true,
+        requirement: requirementId,
+      };
+
+      setConversations((prev) => [localConv, ...prev]);
+      setMessages((prev) => ({
+        ...prev,
+        [localId]: [
+          {
+            id: Date.now() + 1,
+            sender: user?.role === "creator" ? "customer" : "creator",
+            text: `Hi! Thank you for connecting regarding "${requirementTitle || 'your custom craft'}". How can I help?`,
+            time: formatMessageTime(new Date().toISOString()),
+          },
+        ],
+      }));
+      selectConversation(localId);
+      return localId;
+    },
+    [conversations, mapBackendConversation, selectConversation, user]
+  );
 
   const value = {
     conversations,
-    messages,
-    activeConversationId,
     activeConversation,
+    activeConversationId,
     activeMessages,
+    loadingConversations,
+    loadingMessages,
+    conversationsError,
+    messagesError,
+    refreshConversations: loadConversations,
     selectConversation,
     sendMessage,
-    resetChats,
+    startOrOpenConversation,
   };
 
   return (
@@ -335,18 +425,10 @@ export function ChatProvider({ children }) {
   );
 }
 
-// ======================================================
-// CUSTOM HOOK
-// ======================================================
-
 export function useChat() {
   const context = useContext(ChatContext);
-
   if (!context) {
-    throw new Error(
-      "useChat must be used inside ChatProvider"
-    );
+    throw new Error("useChat must be used inside ChatProvider");
   }
-
   return context;
 }

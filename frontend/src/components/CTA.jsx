@@ -21,7 +21,7 @@ export default function CTA() {
               </h2>
 
               <p className="text-cream/70 mt-4 leading-relaxed">
-                Set your own prices, talk directly to buyers, and keep the
+                Set your own prices, talk directly to customers, and keep the
                 story behind your work intact. No factory listings, ever.
               </p>
 
