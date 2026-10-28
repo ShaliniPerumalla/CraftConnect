@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Heart, Star, ArrowRight } from "lucide-react";
-import { crafts } from "../utils/mockData";
+import { useCrafts } from "../context/CraftsContext";
 
 const fallbackImages = [
   "https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=900&q=85",
@@ -38,8 +38,10 @@ function formatPrice(price) {
 }
 
 export default function FeaturedCrafts() {
-  const firstEight = crafts.slice(0, 8);
-  const remainingCrafts = crafts.slice(8);
+  const { crafts } = useCrafts();
+  const allCrafts = Array.isArray(crafts) ? crafts : [];
+  const firstEight = allCrafts.slice(0, 8);
+  const remainingCrafts = allCrafts.slice(8);
 
   const orderedCrafts = [
     ...remainingCrafts,

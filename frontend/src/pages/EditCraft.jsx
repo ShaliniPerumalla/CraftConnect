@@ -1,11 +1,11 @@
-// src/pages/EditCraft.jsx
-
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Save,
   Image as ImageIcon,
   Package,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import {
   Link,
@@ -16,8 +16,8 @@ import {
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-import { creators } from "../utils/mockData";
 import { useCrafts } from "../context/CraftsContext";
+import { fetchProductById, uploadMarketplaceImage } from "../services/marketplaceService";
 
 export default function EditCraft() {
 
@@ -27,9 +27,11 @@ export default function EditCraft() {
   const {
     getCraftById,
     updateCraft,
+    categories,
   } = useCrafts();
 
-  const craft = getCraftById(id);
+  const [craft, setCraft] = useState(() => getCraftById(id) || null);
+  const [uploading, setUploading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -42,6 +44,20 @@ export default function EditCraft() {
   });
 
   const [saving, setSaving] = useState(false);
+
+  // If craft wasn't found in memory, fetch directly from backend API
+  useEffect(() => {
+    const existing = getCraftById(id);
+    if (existing) {
+      setCraft(existing);
+    } else {
+      fetchProductById(id)
+        .then((data) => {
+          if (data) setCraft(data);
+        })
+        .catch(() => {});
+    }
+  }, [id, getCraftById]);
 
   // ======================================================
   // LOAD CRAFT
@@ -82,12 +98,29 @@ export default function EditCraft() {
     }));
   }
 
+  async function handleImageFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const res = await uploadMarketplaceImage(file);
+      if (res?.url) {
+        setFormData((prev) => ({ ...prev, image: res.url }));
+      }
+    } catch (err) {
+      console.warn("Upload failed:", err);
+      alert("Image upload failed. Please ensure file is an image under 5MB or paste a URL.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   // ======================================================
   // SAVE
   // ======================================================
 
-  function handleSubmit(event) {
-
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (!craft) {
@@ -96,19 +129,19 @@ export default function EditCraft() {
 
     setSaving(true);
 
-    updateCraft(craft.id, {
-      ...formData,
-      price: Number(formData.price) || 0,
-      stock: Math.max(
-        0,
-        Number(formData.stock) || 0
-      ),
-    });
+    try {
+      await updateCraft(craft.id, {
+        ...formData,
+        price: Number(formData.price) || 0,
+        stock: Math.max(0, Number(formData.stock) || 0),
+      });
 
-    setTimeout(() => {
-      setSaving(false);
       navigate("/creator/crafts");
-    }, 300);
+    } catch (err) {
+      console.error("Error updating craft:", err);
+    } finally {
+      setSaving(false);
+    }
   }
 
   // ======================================================
@@ -347,38 +380,11 @@ export default function EditCraft() {
                     onChange={handleChange}
                     className="w-full mt-2 px-4 py-3 rounded-xl border border-border bg-cream/30 outline-none focus:border-amber transition-colors"
                   >
-                    <option value="woodwork">
-                      Woodwork
-                    </option>
-
-                    <option value="pottery">
-                      Pottery & Ceramics
-                    </option>
-
-                    <option value="jewelry">
-                      Jewelry
-                    </option>
-
-                    <option value="textiles">
-                      Textiles
-                    </option>
-
-                    <option value="wall-art">
-                      Wall Art
-                    </option>
-
-                    <option value="home-decor">
-                      Home Decor
-                    </option>
-
-                    <option value="candles">
-                      Candles
-                    </option>
-
-                    <option value="leather">
-                      Leather
-                    </option>
-
+                    {categories?.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
                   </select>
 
                 </div>
@@ -445,17 +451,51 @@ export default function EditCraft() {
               <div className="mt-5">
 
                 <label className="block text-sm font-medium">
-                  Image URL
+                  Product Image (Upload or Image URL)
                 </label>
 
-                <input
-                  type="url"
-                  name="image"
-                  value={formData.image}
-                  onChange={handleChange}
-                  className="w-full mt-2 px-4 py-3 rounded-xl border border-border bg-cream/30 outline-none focus:border-amber transition-colors"
-                  placeholder="https://..."
-                />
+                <div className="mt-2 flex flex-col sm:flex-row gap-3">
+
+                  <input
+                    type="url"
+                    name="image"
+                    value={formData.image}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-cream/30 outline-none focus:border-amber transition-colors text-sm"
+                    placeholder="https://... or upload from device"
+                  />
+
+                  <label className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-border bg-white hover:bg-cream cursor-pointer text-sm font-medium transition-colors shrink-0">
+                    {uploading ? (
+                      <Loader2 size={16} className="animate-spin text-amber" />
+                    ) : (
+                      <Upload size={16} className="text-amber-dark" />
+                    )}
+                    <span>{uploading ? "Uploading..." : "Upload Image"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageFile}
+                      disabled={uploading}
+                      className="hidden"
+                    />
+                  </label>
+
+                </div>
+
+                {formData.image && (
+                  <div className="mt-3 flex items-center gap-3 p-2 rounded-xl bg-amber-light/10 border border-amber/20">
+                    <img
+                      src={formData.image}
+                      alt="Preview"
+                      className="w-12 h-12 rounded-lg object-cover"
+                      onError={(e) => { e.currentTarget.style.display = "none"; }}
+                    />
+                    <span className="text-xs text-ink-soft truncate flex-1">
+                      {formData.image}
+                    </span>
+                  </div>
+                )}
 
               </div>
 
