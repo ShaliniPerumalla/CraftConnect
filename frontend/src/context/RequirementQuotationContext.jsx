@@ -16,6 +16,9 @@ const RequirementQuotationContext = createContext(null);
 
 const REQUIREMENTS_STORAGE_KEY = "craftconnect_requirements_v1";
 const QUOTATIONS_STORAGE_KEY = "craftconnect_quotations_v1";
+const DEFAULT_ESTIMATED_COMPLETION_DATE = "2026-10-31";
+
+/* eslint-disable react-refresh/only-export-components */
 
 // ======================================================
 // SAMPLE INITIAL REQUIREMENTS
@@ -530,10 +533,7 @@ export function RequirementQuotationProvider({ children }) {
         (Number(quoteData.deliveryCharge) || 100),
       productionTime: quoteData.productionTime || "5 Days",
       estimatedCompletionDate:
-        quoteData.estimatedCompletionDate ||
-        new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split("T")[0],
+        quoteData.estimatedCompletionDate || DEFAULT_ESTIMATED_COMPLETION_DATE,
       materials:
         quoteData.materials || "Epoxy Resin + Wood + Fine Finish",
       description:

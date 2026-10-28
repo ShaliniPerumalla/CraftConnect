@@ -3,15 +3,12 @@
 import {
   MapPin,
   Calendar,
-  IndianRupee,
   Clock,
   Sparkles,
   ArrowRight,
   Send,
   Eye,
   CheckCircle,
-  FileCheck,
-  AlertCircle,
 } from "lucide-react";
 
 export default function RequirementCard({
@@ -21,7 +18,6 @@ export default function RequirementCard({
   onViewRequirement,
   onSendQuotation,
   onCompareQuotations,
-  onSelectRequirement,
 }) {
   const quoteCount = quotations.length;
 

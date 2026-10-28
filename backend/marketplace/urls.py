@@ -1,39 +1,28 @@
-
-from django.urls import include, path
-from rest_framework.routers import DefaultRouter
+from django.urls import path
 
 from .views import (
-    CategoryViewSet,
-    CreatorProfileViewSet,
-    ImageUploadView,
-    ProductViewSet,
+    CreatorProfileListView,
+    CreatorProfileDetailView,
+    MyCreatorProfileView,
 )
 
-router = DefaultRouter()
-router.register(r"categories", CategoryViewSet, basename="category")
-router.register(r"creators", CreatorProfileViewSet, basename="creator")
-router.register(r"products", ProductViewSet, basename="product")
 
 urlpatterns = [
-    # Categories, creators, and products
-    path("", include(router.urls)),
-
-    # Image upload endpoint
-    path("upload-image/", ImageUploadView.as_view(), name="upload-image"),
-
-    # Creator self-service endpoints
     path(
-        "creator-profile/me/",
-        CreatorProfileViewSet.as_view({
-            "get": "me",
-            "put": "me",
-            "patch": "me",
-        }),
-        name="creator-me",
+        "",
+        CreatorProfileListView.as_view(),
+        name="creator-list",
     ),
+
     path(
-        "creator/my-products/",
-        ProductViewSet.as_view({"get": "my_crafts"}),
-        name="creator-my-products",
+        "my-profile/",
+        MyCreatorProfileView.as_view(),
+        name="my-creator-profile",
+    ),
+
+    path(
+        "<int:pk>/",
+        CreatorProfileDetailView.as_view(),
+        name="creator-detail",
     ),
 ]

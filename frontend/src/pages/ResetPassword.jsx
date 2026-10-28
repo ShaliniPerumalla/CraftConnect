@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 
 import AuthLayout from "../components/auth/AuthLayout";
 import PasswordInput from "../components/auth/PasswordInput";
 import PasswordStrength from "../components/auth/PasswordStrength";
 import AuthMessage from "../components/auth/AuthMessage";
+import { resetPassword } from "../services/authService";
 
 function validate({ password, confirmPassword }) {
   const errors = {};
@@ -27,8 +28,9 @@ function validate({ password, confirmPassword }) {
 
 export default function ResetPassword() {
   const navigate = useNavigate();
+  const { token } = useParams();
 
-  const [mounted, setMounted] = useState(false);
+  const [mounted] = useState(true);
 
   const [form, setForm] = useState({
     password: "",
@@ -36,12 +38,9 @@ export default function ResetPassword() {
   });
 
   const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -59,24 +58,38 @@ export default function ResetPassword() {
     }
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
     const nextErrors = validate(form);
 
     setErrors(nextErrors);
+    setSubmitError("");
 
     if (Object.keys(nextErrors).length > 0) {
       return;
     }
 
+    if (!token) {
+      setSubmitError("The reset link is missing or invalid.");
+      return;
+    }
+
     setSubmitting(true);
 
-    // Frontend-only simulation for now
-    setTimeout(() => {
-      setSubmitting(false);
+    try {
+      await resetPassword(token, form.password, form.confirmPassword);
       setDone(true);
-    }, 900);
+    } catch (error) {
+      const message =
+        error?.response?.data?.error ||
+        error?.response?.data?.detail ||
+        error?.response?.data?.message ||
+        "We could not reset your password. Please try again.";
+      setSubmitError(message);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -116,6 +129,12 @@ export default function ResetPassword() {
             <p className="text-ink-soft text-[15px] mb-8">
               Choose a new password for your CraftConnect account.
             </p>
+
+            {submitError && (
+              <div className="mb-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {submitError}
+              </div>
+            )}
 
             <form
               onSubmit={handleSubmit}

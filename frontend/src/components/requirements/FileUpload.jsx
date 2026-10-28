@@ -1,7 +1,7 @@
 // src/components/requirements/FileUpload.jsx
 
 import { useState } from "react";
-import { Upload, X, Image as ImageIcon, Sparkles } from "lucide-react";
+import { Upload, X, Sparkles } from "lucide-react";
 
 const SAMPLE_PRESETS = [
   {

@@ -1,49 +1,38 @@
-
-import sys
 from pathlib import Path
+from datetime import timedelta
 import os
+import sys
 from dotenv import load_dotenv
 
-<<<<<<< HEAD
 # Build paths inside the project like this: BASE_DIR / "subdir".
-=======
-# Build paths inside the project
->>>>>>> origin/develop
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-# Load environment variables from .env
 load_dotenv(BASE_DIR / ".env")
 
-<<<<<<< HEAD
+
+def env_bool(value, default=False):
+    if value is None:
+        return default
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-craftconnect-dev-key-fallback-xyz123")
-=======
-# Add local Python libraries if available
-pylibs_dir = BASE_DIR / ".pylibs"
-if pylibs_dir.exists() and str(pylibs_dir) not in sys.path:
-    sys.path.insert(0, str(pylibs_dir))
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-me")
 
->>>>>>> origin/develop
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5175")
 
-# Security settings
-SECRET_KEY = os.getenv(
-    "SECRET_KEY",
-    "django-insecure-makermatch-default-key-change-in-production",
-)
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = env_bool(os.getenv("DEBUG"), True)
 
-<<<<<<< HEAD
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'testserver', '*']
-=======
-DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1")
-
+DEFAULT_ALLOWED_HOSTS = "localhost,127.0.0.1,0.0.0.0,::1"
 ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
+    host.strip()
+    for host in os.getenv("ALLOWED_HOSTS", DEFAULT_ALLOWED_HOSTS).split(",")
+    if host.strip()
 ]
->>>>>>> origin/develop
 
 
 # Application definition
+
 INSTALLED_APPS = [
     # Django built-in apps
     "django.contrib.admin",
@@ -56,8 +45,9 @@ INSTALLED_APPS = [
     # Third-party apps
     "rest_framework",
     "corsheaders",
+    "rest_framework_simplejwt.token_blacklist",
 
-    # MakerMatch apps
+    # CraftConnect apps
     "accounts",
     "marketplace",
     "requirements_app",
@@ -70,7 +60,6 @@ INSTALLED_APPS = [
 ]
 
 
-# Middleware
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -86,7 +75,6 @@ MIDDLEWARE = [
 ROOT_URLCONF = "config.urls"
 
 
-# Templates
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -105,31 +93,31 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-<<<<<<< HEAD
-
-# Database
-# Using SQLite for local development to bypass MySQL authentication errors
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+# MySQL Database
+# Use SQLite for Django tests so the test runner does not require CREATE DATABASE
+# privileges on a restricted MySQL user. Production and local app usage still use
+# the configured MySQL database unless a test run is requested.
+USE_SQLITE_FOR_TESTS = os.getenv("USE_SQLITE_FOR_TESTS", "false").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
 }
-=======
 
-# Database configuration
-# Use MySQL when configured, otherwise use SQLite for local development.
-if (
-    os.getenv("DB_NAME")
-    and os.getenv("USE_SQLITE", "False").lower() not in ("true", "1")
-):
+if "test" in sys.argv or USE_SQLITE_FOR_TESTS:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "test_db.sqlite3",
+        }
+    }
+else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.mysql",
-            "NAME": os.getenv("DB_NAME"),
-            "USER": os.getenv("DB_USER"),
-            "PASSWORD": os.getenv("DB_PASSWORD"),
+            "NAME": os.getenv("DB_NAME", "makermatch_db"),
+            "USER": os.getenv("DB_USER", "root"),
+            "PASSWORD": os.getenv("DB_PASSWORD", ""),
             "HOST": os.getenv("DB_HOST", "127.0.0.1"),
             "PORT": os.getenv("DB_PORT", "3306"),
             "OPTIONS": {
@@ -137,46 +125,28 @@ if (
             },
         }
     }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-    }
->>>>>>> origin/develop
 
 
 # Password validation
+
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": (
-            "django.contrib.auth.password_validation."
-            "UserAttributeSimilarityValidator"
-        ),
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        "NAME": (
-            "django.contrib.auth.password_validation."
-            "MinimumLengthValidator"
-        ),
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        "NAME": (
-            "django.contrib.auth.password_validation."
-            "CommonPasswordValidator"
-        ),
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        "NAME": (
-            "django.contrib.auth.password_validation."
-            "NumericPasswordValidator"
-        ),
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
 
 # Internationalization
+
 LANGUAGE_CODE = "en-us"
 
 TIME_ZONE = "Asia/Kolkata"
@@ -187,40 +157,86 @@ USE_TZ = True
 
 
 # Static files
-STATIC_URL = "static/"
 
-
-# Media files
-MEDIA_URL = "/media/"
+STATIC_URL = os.getenv("STATIC_URL", "/static/")
+STATIC_ROOT = BASE_DIR / "staticfiles"
+MEDIA_URL = os.getenv("MEDIA_URL", "/media/")
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Optional Cloudinary support for production media uploads.
+# This will be enabled automatically when credentials are provided.
+CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
+CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
+CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
+CLOUDINARY_URL = os.getenv("CLOUDINARY_URL")
+
+if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
+    DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+    CLOUDINARY_STORAGE = {
+        "CLOUD_NAME": CLOUDINARY_CLOUD_NAME,
+        "API_KEY": CLOUDINARY_API_KEY,
+        "API_SECRET": CLOUDINARY_API_SECRET,
+    }
 
 # Default primary key field type
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 # CORS configuration
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+# Allows the React/Vite frontend to communicate with Django.
 
+DEFAULT_CORS_ORIGINS = (
+    "http://localhost:5173,http://127.0.0.1:5173,"
+    "http://localhost:5174,http://127.0.0.1:5174,"
+    "http://localhost:5175,http://127.0.0.1:5175,"
+    "http://0.0.0.0:5175"
+)
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("CORS_ALLOWED_ORIGINS", DEFAULT_CORS_ORIGINS).split(",")
+    if origin.strip()
+]
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = False
 
 # Django REST Framework configuration
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-        "rest_framework.authentication.SessionAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
+        "rest_framework.permissions.IsAuthenticated",
     ),
+    "EXCEPTION_HANDLER": "common.exception_handler.custom_exception_handler",
 }
 
+# Custom user model
+AUTH_USER_MODEL = "accounts.User"
 
-# Cloudinary configuration
-CLOUDINARY_STORAGE = {
-    "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME", ""),
-    "API_KEY": os.getenv("CLOUDINARY_API_KEY", ""),
-    "API_SECRET": os.getenv("CLOUDINARY_API_SECRET", ""),
+# Email configuration
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+EMAIL_USE_TLS = env_bool(os.getenv("EMAIL_USE_TLS"), True)
+EMAIL_USE_SSL = env_bool(os.getenv("EMAIL_USE_SSL"), False)
+
+DEFAULT_FROM_EMAIL = os.getenv(
+    "DEFAULT_FROM_EMAIL",
+    EMAIL_HOST_USER or "noreply@localhost",
+)
+
+# JWT configuration
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
 }

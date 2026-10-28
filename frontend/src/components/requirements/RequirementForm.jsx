@@ -1,17 +1,7 @@
 // src/components/requirements/RequirementForm.jsx
 
 import { useState } from "react";
-import {
-  Send,
-  Sparkles,
-  Calendar,
-  MapPin,
-  Tag,
-  FileText,
-  CheckCircle2,
-  HelpCircle,
-  Wand2,
-} from "lucide-react";
+import { Sparkles, Wand2, CheckCircle2, Send } from "lucide-react";
 
 import FileUpload from "./FileUpload";
 import BudgetInput from "./BudgetInput";

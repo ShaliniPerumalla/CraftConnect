@@ -1,5 +1,6 @@
 
 from django.contrib import admin
+
 from .models import Category, CreatorProfile, Product, ProductImage
 
 
@@ -10,7 +11,7 @@ class ProductImageInline(admin.TabularInline):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ["name", "slug", "icon", "pieces_count", "created_at"]
+    list_display = ["name", "slug", "icon", "created_at"]
     search_fields = ["name", "description"]
     prepopulated_fields = {"slug": ("name",)}
 
@@ -19,7 +20,7 @@ class CategoryAdmin(admin.ModelAdmin):
 class CreatorProfileAdmin(admin.ModelAdmin):
     list_display = [
         "name",
-        "user",
+        "creator",
         "specialty",
         "location",
         "rating",
@@ -28,7 +29,7 @@ class CreatorProfileAdmin(admin.ModelAdmin):
     ]
     search_fields = [
         "name",
-        "user__username",
+        "creator__email",
         "specialty",
         "location",
         "skills",

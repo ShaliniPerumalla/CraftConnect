@@ -9,9 +9,20 @@ import Register from "../pages/Register";
 import ForgotPassword from "../pages/ForgotPassword";
 import ResetPassword from "../pages/ResetPassword";
 import EmailVerification from "../pages/EmailVerification";
+import Requirements from "../pages/Requirements";
+import Orders from "../pages/Orders";
+import OrderDetails from "../pages/OrderDetails";
+import Chat from "../pages/chat";
+import CustomerProfile from "../pages/CustomerProfile";
+import Notifications from "../pages/Notifications";
+import CreatorDashboard from "../pages/CreatorDashboard";
+import AddCraft from "../pages/AddCraft";
+import MyCrafts from "../pages/MyCrafts";
+import EditCraft from "../pages/EditCraft";
+import CreatorOrders from "../pages/CreatorOrders";
+import AdminDashboard from "../pages/AdminDashboard";
+import AdminComplaints from "../pages/AdminComplaints";
 import NotFound from "../pages/NotFound";
-
-// Import your existing pages here
 
 export default function AppRoutes() {
   return (
@@ -68,7 +79,7 @@ export default function AppRoutes() {
 
         <Route
           path="/profile"
-          element={<Profile />}
+          element={<CustomerProfile />}
         />
 
         <Route
@@ -83,7 +94,10 @@ export default function AppRoutes() {
 
       <Route element={<RoleRoute allowedRoles={["customer"]} />}>
 
-        {/* customer-specific routes */}
+        <Route
+          path="/requirements"
+          element={<Requirements />}
+        />
 
       </Route>
 

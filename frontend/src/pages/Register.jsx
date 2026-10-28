@@ -1,7 +1,5 @@
 import { useState } from "react";
-import useAuth from "../hooks/useAuth";
 import { Link, useNavigate } from "react-router-dom";
-
 import {
   User,
   Mail,
@@ -13,32 +11,55 @@ import {
   Store,
 } from "lucide-react";
 
+import { registerUser } from "../services/authService";
+
 export default function Register() {
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState("customer");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setIsSubmitting(true);
 
     const formData = new FormData(e.currentTarget);
 
     const userData = {
-      name: formData.get("name"),
-      email: formData.get("email"),
+      name: String(formData.get("name") || "").trim(),
+      email: String(formData.get("email") || "").trim(),
+      password: String(formData.get("password") || ""),
       role,
     };
 
-    // Frontend-only authentication for now.
-    // Django backend will replace this later.
-    login(userData);
+    try {
+      const response = await registerUser(userData);
+      const message = response?.message || "Registration successful.";
 
-    if (role === "creator") {
-      navigate("/creator-dashboard");
-    } else {
-      navigate("/");
+      navigate("/login", {
+        replace: true,
+        state: { message },
+      });
+    } catch (err) {
+      const responseData = err.response?.data;
+
+      if (responseData?.message) {
+        setError(responseData.message);
+        return;
+      }
+
+      const serverErrors = responseData && typeof responseData === "object"
+        ? Object.values(responseData)
+            .flatMap((value) => Array.isArray(value) ? value : [value])
+            .join(" ")
+        : "";
+
+      setError(serverErrors || "Registration failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -170,6 +191,12 @@ export default function Register() {
 
           {/* Form card */}
           <div className="bg-white border border-border rounded-3xl p-6 sm:p-8 shadow-sm">
+
+            {error && (
+              <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {error}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
 
@@ -352,9 +379,10 @@ export default function Register() {
 
               <button
                 type="submit"
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-ink text-cream font-medium hover:bg-amber-dark transition-colors"
+                disabled={isSubmitting}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-ink text-cream font-medium hover:bg-amber-dark transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                Create account
+                {isSubmitting ? "Creating account..." : "Create account"}
                 <ArrowRight size={17} />
               </button>
 

@@ -1,6 +1,6 @@
 // src/pages/CustomerProfile.jsx
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   User,
@@ -26,6 +26,8 @@ import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
 import { useOrders } from "../context/OrdersContext";
 import { useRequirements } from "../context/RequirementsContext";
+import useAuth from "../hooks/useAuth";
+import { deleteAccount } from "../services/authService";
 
 const PROFILE_STORAGE_KEY = "craftconnect_customer_profile";
 
@@ -48,6 +50,7 @@ export default function CustomerProfile() {
     useWishlist();
 
   const { cartItems = [] } = useCart();
+  const { logout } = useAuth();
 
   const ordersContext = useOrders();
 
@@ -87,8 +90,21 @@ export default function CustomerProfile() {
 
   const [editData, setEditData] = useState(profile);
 
+  const profileEditorRef = useRef(null);
+
   const [activeSection, setActiveSection] =
     useState("overview");
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (editMode && profileEditorRef.current) {
+      profileEditorRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [editMode]);
 
   // ======================================================
   // CART COUNT
@@ -124,6 +140,7 @@ export default function CustomerProfile() {
 
   function startEditing() {
     setEditData(profile);
+    setActiveSection("overview");
     setEditMode(true);
   }
 
@@ -176,7 +193,7 @@ export default function CustomerProfile() {
   // LOGOUT
   // ======================================================
 
-  function handleLogout() {
+  async function handleLogout() {
     const confirmed = window.confirm(
       "Are you sure you want to logout?"
     );
@@ -185,10 +202,22 @@ export default function CustomerProfile() {
       return;
     }
 
-    // Authentication can be connected here later.
-    localStorage.removeItem("craftconnect_user");
-
+    logout();
     window.location.href = "/login";
+  }
+
+  async function handleDeleteAccount() {
+    try {
+      await deleteAccount();
+      logout();
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Could not delete account:", error);
+      setDeleteModalOpen(false);
+      window.alert(
+        "Unable to delete this account right now. Please try again later."
+      );
+    }
   }
 
   // ======================================================
@@ -320,6 +349,59 @@ export default function CustomerProfile() {
       {/* ==================================================
           MAIN CONTENT
       ================================================== */}
+
+      {deleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/45 px-4 backdrop-blur-[2px]">
+          <div className="w-full max-w-md rounded-[28px] border border-border bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-rose-dark font-semibold">
+                  Account deletion
+                </p>
+                <h3 className="font-display text-3xl mt-2 text-ink">
+                  Delete your account?
+                </h3>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setDeleteModalOpen(false)}
+                className="w-10 h-10 rounded-full bg-cream flex items-center justify-center text-ink-soft hover:text-ink transition-colors"
+                aria-label="Close delete account dialog"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-rose/20 bg-rose/5 p-4 text-sm text-ink-soft">
+              <p className="font-medium text-ink">This action is permanent.</p>
+              <ul className="mt-3 space-y-2 list-disc pl-5">
+                <li>All your account information will be deleted.</li>
+                <li>Your saved profile and activity will be removed.</li>
+                <li>You will need to create a new account to sign in again.</li>
+              </ul>
+            </div>
+
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteModalOpen(false)}
+                className="flex-1 rounded-full border border-border bg-white px-4 py-3 text-sm font-medium text-ink hover:border-amber transition-colors"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                className="flex-1 rounded-full bg-rose-dark px-4 py-3 text-sm font-medium text-white hover:bg-rose transition-colors"
+              >
+                Delete my account
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 
@@ -573,10 +655,19 @@ export default function CustomerProfile() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-rose-dark hover:bg-rose/5 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-ink-soft hover:bg-cream transition-colors"
               >
                 <LogOut size={17} />
                 Logout
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDeleteModalOpen(true)}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-rose-dark hover:bg-rose/5 transition-colors"
+              >
+                <X size={17} />
+                Delete account
               </button>
 
             </div>
@@ -596,6 +687,7 @@ export default function CustomerProfile() {
             {editMode ? (
 
               <form
+                ref={profileEditorRef}
                 onSubmit={saveProfile}
                 className="bg-white border border-border rounded-3xl p-6 sm:p-8 shadow-sm"
               >
