@@ -14,7 +14,8 @@ import {
   Briefcase,
 } from "lucide-react";
 
-import { categories } from "../utils/mockData";
+import { categories as defaultCategories } from "../utils/mockData";
+import { useCrafts } from "../context/CraftsContext";
 
 const iconMap = {
   Hammer,
@@ -80,6 +81,7 @@ const categoryDescriptions = {
 };
 
 export default function Categories() {
+  const { categories } = useCrafts();
   return (
     <div className="min-h-screen bg-cream">
 
@@ -272,7 +274,7 @@ export default function Categories() {
                     ">
 
                       <img
-                        src={categoryImages[category.id]}
+                        src={category.image_url || categoryImages[category.id] || "/botanical-wall-art.jpg"}
                         alt={category.name}
                         loading="lazy"
                         className="
