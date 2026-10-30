@@ -107,6 +107,42 @@ export const creators = [
     cover:
       "https://images.unsplash.com/photo-1604881988758-f76ad2f7aac1?auto=format&fit=crop&w=800&q=80",
   },
+
+    {
+    id: "c5",
+    name: "Ananya Ceramics",
+    specialty: "Handmade ceramic pottery",
+    location: "Jaipur, India",
+    avatar: "https://i.pravatar.cc/150?img=44",
+    rating: 4.8,
+    products: 28,
+    cover:
+      "https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=800&q=80",
+  },
+
+  {
+    id: "c6",
+    name: "Arjun Woodworks",
+    specialty: "Handcrafted wooden furniture",
+    location: "Mysore, India",
+    avatar: "https://i.pravatar.cc/150?img=12",
+    rating: 4.7,
+    products: 31,
+    cover:
+      "https://images.unsplash.com/photo-1544984243-ec57ea16fe25?auto=format&fit=crop&w=800&q=80",
+  },
+
+  {
+    id: "c7",
+    name: "Meera Jewellery",
+    specialty: "Handmade silver jewellery",
+    location: "Hyderabad, India",
+    avatar: "https://i.pravatar.cc/150?img=49",
+    rating: 4.9,
+    products: 24,
+    cover:
+      "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80",
+  },
 ];
 
 // ======================================================

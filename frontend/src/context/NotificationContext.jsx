@@ -17,43 +17,57 @@ const STORAGE_KEY = "craftconnect_notifications";
 const initialNotifications = [
   {
     id: "notification-1",
-    type: "order",
-    title: "Order confirmed",
+    type: "quotation",
+    title: "New quotation received",
     message:
-      "Your handmade order has been successfully placed and is now being prepared by the creator.",
+      "Anu Crafts has sent you a quotation for your custom jewelry requirement.",
     time: "Just now",
     read: false,
     createdAt: Date.now(),
   },
+
   {
     id: "notification-2",
-    type: "custom",
-    title: "Custom request received",
+    type: "design",
+    title: "Creator uploaded a design",
     message:
-      "Your custom craft requirement is ready to be matched with a suitable creator.",
+      "Anu Crafts has uploaded a new design for your custom order. Check it and share your feedback.",
     time: "10 min ago",
     read: false,
     createdAt: Date.now() - 10 * 60 * 1000,
   },
+
   {
     id: "notification-3",
-    type: "craft",
-    title: "New craft added",
+    type: "production",
+    title: "Your order entered production",
     message:
-      "A new handmade piece has been added to the CraftConnect collection.",
+      "Your custom order has been approved and is now being prepared by the creator.",
     time: "1 hour ago",
-    read: true,
+    read: false,
     createdAt: Date.now() - 60 * 60 * 1000,
   },
+
   {
     id: "notification-4",
-    type: "wishlist",
-    title: "Something from your wishlist",
+    type: "delivery",
+    title: "Order ready for delivery",
     message:
-      "A craft you liked is still waiting for you.",
+      "Your custom order is ready for delivery. You can now track its delivery status.",
     time: "3 hours ago",
-    read: true,
+    read: false,
     createdAt: Date.now() - 3 * 60 * 60 * 1000,
+  },
+
+  {
+    id: "notification-5",
+    type: "delivered",
+    title: "Order delivered",
+    message:
+      "Your custom order has been successfully delivered. Don't forget to share your experience with the creator.",
+    time: "Yesterday",
+    read: false,
+    createdAt: Date.now() - 24 * 60 * 60 * 1000,
   },
 ];
 
@@ -97,12 +111,14 @@ export function NotificationProvider({ children }) {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
 
+      // No saved notifications → use sample data
       if (!saved) {
         return initialNotifications;
       }
 
       const parsed = JSON.parse(saved);
 
+      // Invalid saved data → use sample data
       if (!Array.isArray(parsed)) {
         return initialNotifications;
       }
@@ -119,7 +135,7 @@ export function NotificationProvider({ children }) {
   });
 
   // ======================================================
-  // SAVE
+  // SAVE TO LOCAL STORAGE
   // ======================================================
 
   useEffect(() => {
@@ -147,34 +163,34 @@ export function NotificationProvider({ children }) {
   }, [notifications]);
 
   // ======================================================
-  // MARK AS READ
-  // ======================================================
+// MARK AS READ
+// ======================================================
 
-  function markAsRead(notificationId) {
-    setNotifications((current) =>
-      current.map((notification) =>
-        notification.id === notificationId
-          ? {
-              ...notification,
-              read: true,
-            }
-          : notification
-      )
-    );
-  }
+function markAsRead(notificationId) {
+  setNotifications((current) =>
+    current.map((notification) =>
+      notification.id === notificationId
+        ? {
+            ...notification,
+            read: true,
+          }
+        : notification
+    )
+  );
+}
 
-  // ======================================================
-  // MARK ALL AS READ
-  // ======================================================
+// ======================================================
+// MARK ALL AS READ
+// ======================================================
 
-  function markAllAsRead() {
-    setNotifications((current) =>
-      current.map((notification) => ({
-        ...notification,
-        read: true,
-      }))
-    );
-  }
+function markAllAsRead() {
+  setNotifications((current) =>
+    current.map((notification) => ({
+      ...notification,
+      read: true,
+    }))
+  );
+}
 
   // ======================================================
   // ADD NOTIFICATION
@@ -191,11 +207,18 @@ export function NotificationProvider({ children }) {
       id: `notification-${createdAt}-${Math.random()
         .toString(36)
         .slice(2, 8)}`,
+
       type,
+
       title,
+
       message,
+
       time: "Just now",
+
+      // New notifications are unread
       read: false,
+
       createdAt,
     };
 
@@ -208,7 +231,7 @@ export function NotificationProvider({ children }) {
   }
 
   // ======================================================
-  // DELETE
+  // DELETE NOTIFICATION
   // ======================================================
 
   function deleteNotification(notificationId) {
@@ -221,7 +244,7 @@ export function NotificationProvider({ children }) {
   }
 
   // ======================================================
-  // CLEAR ALL
+  // CLEAR ALL NOTIFICATIONS
   // ======================================================
 
   function clearNotifications() {
@@ -229,7 +252,7 @@ export function NotificationProvider({ children }) {
   }
 
   // ======================================================
-  // RESET
+  // RESET NOTIFICATIONS
   // ======================================================
 
   function resetNotifications() {
@@ -282,7 +305,7 @@ export function NotificationProvider({ children }) {
 }
 
 // ======================================================
-// HOOK
+// CUSTOM HOOK
 // ======================================================
 
 export function useNotifications() {
@@ -290,7 +313,7 @@ export function useNotifications() {
 
   if (!context) {
     throw new Error(
-      "useNotifications must be used inside a NotificationProvider"
+      "useNotifications must be used inside NotificationProvider"
     );
   }
 
