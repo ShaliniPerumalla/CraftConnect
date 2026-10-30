@@ -3,15 +3,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Hammer } from 'lucide-react';
-import useAuth from '../hooks/useAuth';
-import * as authService from '../services/authService';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState('customer');
+  const [role, setRole] = useState('buyer');
 
   const [formData, setFormData] = useState({
     email: '',
@@ -25,34 +22,23 @@ export default function Login() {
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
-    let serverData = null;
-    try {
-      serverData = await authService.loginUser({
-        email: formData.email,
-        password: formData.password || "password123",
-        role: role,
-      });
-      if (serverData?.access) {
-        localStorage.setItem("access_token", serverData.access);
-        if (serverData?.refresh) {
-          localStorage.setItem("refresh_token", serverData.refresh);
-        }
-      }
-    } catch (err) {
-      console.warn("Backend login failed, continuing with local session:", err);
-    }
-
-    login({
-      name: serverData?.user?.name || formData.email.split('@')[0] || 'User',
+    // Create standard user payload based on selected role
+    const userPayload = {
       email: formData.email,
-      role,
-    });
+      role: role, // 'buyer' or 'creator'
+      name: role === 'creator' ? 'Artisan Creator' : 'Craft Customer',
+      id: role === 'creator' ? 'creator-101' : 'user-101',
+    };
 
+    // Store user session in localStorage
+    localStorage.setItem('craftconnect_user', JSON.stringify(userPayload));
+
+    // Redirect dynamically based on chosen role
     if (role === 'creator') {
-      navigate('/requirements');
+      navigate('/creator-dashboard');
     } else {
       navigate('/');
     }
@@ -162,15 +148,15 @@ export default function Login() {
 
               <button
                 type="button"
-                onClick={() => setRole('customer')}
+                onClick={() => setRole('buyer')}
                 className={`p-4 rounded-xl border text-left transition-all ${
-                  role === 'customer'
+                  role === 'buyer'
                     ? 'border-terracotta bg-terracotta-light/20'
                     : 'border-border hover:border-terracotta/50'
                 }`}
               >
                 <p className="font-medium text-ink">
-                  Customer
+                  Buyer
                 </p>
 
                 <p className="text-xs text-ink-soft mt-1">
@@ -253,12 +239,12 @@ export default function Login() {
                   Password
                 </label>
 
-                <button
-                  type="button"
+                <Link
+                  to="/forgot-password"
                   className="text-xs font-medium text-terracotta-dark hover:underline"
                 >
                   Forgot password?
-                </button>
+                </Link>
 
               </div>
 
@@ -303,7 +289,7 @@ export default function Login() {
               type="submit"
               className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-ink text-cream font-medium hover:bg-terracotta-dark transition-colors"
             >
-              Sign in
+              Sign in as {role === 'creator' ? 'Creator' : 'Buyer'}
               <ArrowRight size={17} />
             </button>
 
