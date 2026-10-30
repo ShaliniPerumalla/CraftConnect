@@ -61,10 +61,21 @@ class MessageListCreateView(generics.ListCreateAPIView):
         return Message.objects.filter(conversation_id=conv_id)
 
     def perform_create(self, serializer):
+        from notifications.services import create_notification
         conv_id = self.kwargs['conversation_id']
         conversation = Conversation.objects.get(id=conv_id)
-        serializer.save(conversation=conversation, sender=self.request.user)
+        msg = serializer.save(conversation=conversation, sender=self.request.user)
         conversation.save()
+
+        # Send notification to other conversation participant
+        recipient = conversation.creator if self.request.user == conversation.customer else conversation.customer
+        create_notification(
+            recipient=recipient,
+            notification_type='message',
+            title=f"New Message from {self.request.user.username}",
+            message=msg.body[:120] if msg.body else "You have a new message.",
+            link="/chat"
+        )
 
 class MarkMessagesReadView(APIView):
     permission_classes = [permissions.IsAuthenticated]

@@ -678,6 +678,14 @@ export function RequirementQuotationProvider({ children }) {
       });
     }
 
+    // 5. Sync decision to Django backend
+    const quoteBackendId = targetQuote.backendId || parseInt(String(quotationId).replace(/\D/g, ""), 10);
+    if (quoteBackendId) {
+      member3Service.decideQuotation(quoteBackendId, "accept").catch((err) => {
+        console.warn("Backend accept quotation sync notice:", err);
+      });
+    }
+
     return true;
   };
 
@@ -686,11 +694,19 @@ export function RequirementQuotationProvider({ children }) {
   // ======================================================
 
   const declineQuotation = (quotationId) => {
+    const targetQuote = quotations.find((q) => q.id === quotationId);
     setQuotations((prev) =>
       prev.map((q) =>
         q.id === quotationId ? { ...q, status: "Declined" } : q
       )
     );
+
+    const quoteBackendId = targetQuote?.backendId || parseInt(String(quotationId).replace(/\D/g, ""), 10);
+    if (quoteBackendId) {
+      member3Service.decideQuotation(quoteBackendId, "reject").catch((err) => {
+        console.warn("Backend reject quotation sync notice:", err);
+      });
+    }
   };
 
   // ======================================================

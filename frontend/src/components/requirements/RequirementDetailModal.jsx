@@ -37,8 +37,8 @@ export default function RequirementDetailModal({
 
         {/* Top Header */}
         <div className="flex items-center gap-2 mb-2 pr-10">
-          <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-cream border border-border text-ink">
-            #{requirement.id}
+          <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-cream border border-border text-ink">
+            {requirement.title}
           </span>
           <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-amber/10 text-amber-dark">
             {requirement.category}
@@ -76,7 +76,7 @@ export default function RequirementDetailModal({
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded bg-black/60 text-white text-[10px] font-medium backdrop-blur-xs">
-                    Ref #{idx + 1}
+                    Photo {idx + 1}
                   </span>
                 </div>
               ))}

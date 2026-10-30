@@ -51,56 +51,66 @@ export default function Navbar() {
      ROLE-BASED NAVIGATION
   ====================================================== */
 
-  const navItems = [
-    {
-      label: "Home",
-      path: "/",
-    },
-    {
-      label: "Explore",
-      path: "/explore",
-    },
-    {
-      label: "Categories",
-      path: "/categories",
-    },
-    {
-      label: "Creators",
-      path: "/creators",
-    },
-  ];
-
-  if (isAuthenticated && user?.role === "customer") {
-    navItems.push(
-      {
-        label: "Custom Order",
-        path: "/requirements",
-      },
-      {
-        label: "Orders",
-        path: "/orders",
-      }
-    );
-  }
+  let navItems = [];
 
   if (isAuthenticated && user?.role === "creator") {
-    navItems.push(
+    navItems = [
       {
-        label: "My Crafts",
-        path: "/creator/crafts",
+        label: "Home",
+        path: "/creator/home",
       },
       {
-        label: "Orders",
-        path: "/creator/orders",
-      }
-    );
-  }
+        label: "My Crafts",
+        path: "/creator/my-crafts",
+      },
+      {
+        label: "Customer Requests",
+        path: "/creator/requests",
+      },
+      {
+        label: "My Bids",
+        path: "/creator/my-bids",
+      },
+    ];
+  } else {
+    navItems = [
+      {
+        label: "Home",
+        path: "/",
+      },
+      {
+        label: "Explore",
+        path: "/explore",
+      },
+      {
+        label: "Categories",
+        path: "/categories",
+      },
+      {
+        label: "Creators",
+        path: "/creators",
+      },
+    ];
 
-  if (isAuthenticated && user?.role === "admin") {
-    navItems.push({
-      label: "Admin",
-      path: "/admin",
-    });
+    if (isAuthenticated && user?.role === "customer") {
+      navItems.push(
+        {
+          label: "Custom Order",
+          path: "/requirements",
+        },
+        {
+          label: "Orders",
+          path: "/orders",
+        }
+      );
+    }
+
+    if (isAuthenticated && user?.role === "admin") {
+      navItems.push({
+        label: "Admin",
+        path: "/admin",
+      });
+    }
   }
 
   /* ======================================================
@@ -120,7 +130,7 @@ export default function Navbar() {
 
   function getDashboardPath() {
     if (user?.role === "creator") {
-      return "/creator-dashboard";
+      return "/creator/home";
     }
 
     if (user?.role === "admin") {
@@ -169,7 +179,7 @@ export default function Navbar() {
           ====================================================== */}
 
           <Link
-            to="/"
+            to={user?.role === "creator" ? "/creator/home" : "/"}
             onClick={closeMobileMenu}
             className="
               font-display

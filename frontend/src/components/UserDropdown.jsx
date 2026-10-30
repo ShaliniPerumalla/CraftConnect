@@ -38,31 +38,62 @@ export default function UserDropdown() {
           </Link>
 
           {user.role === "customer" && (
-            <Link
-              to="/orders"
-              className="block px-3 py-2 rounded-lg hover:bg-cream"
-            >
-              My Orders
-            </Link>
+            <>
+              <Link
+                to="/orders"
+                className="block px-3 py-2 rounded-lg hover:bg-cream"
+              >
+                My Orders
+              </Link>
+              <Link
+                to="/complaints"
+                className="block px-3 py-2 rounded-lg hover:bg-cream"
+              >
+                Complaints & Support
+              </Link>
+            </>
           )}
 
           {user.role === "creator" && (
-            <Link
-              to="/creator-dashboard"
-              className="block px-3 py-2 rounded-lg hover:bg-cream"
-            >
-              Dashboard
-            </Link>
+            <>
+              <Link
+                to="/creator-dashboard"
+                className="block px-3 py-2 rounded-lg hover:bg-cream"
+              >
+                Dashboard
+              </Link>
+              <Link
+                to="/creator/orders"
+                className="block px-3 py-2 rounded-lg hover:bg-cream"
+              >
+                Commissions / Orders
+              </Link>
+            </>
           )}
 
           {user.role === "admin" && (
-            <Link
-              to="/admin"
-              className="block px-3 py-2 rounded-lg hover:bg-cream"
-            >
-              Admin Dashboard
-            </Link>
+            <>
+              <Link
+                to="/admin"
+                className="block px-3 py-2 rounded-lg hover:bg-cream"
+              >
+                Admin Dashboard
+              </Link>
+              <Link
+                to="/admin/complaints"
+                className="block px-3 py-2 rounded-lg hover:bg-cream"
+              >
+                Manage Complaints
+              </Link>
+            </>
           )}
+
+          <Link
+            to="/notifications"
+            className="block px-3 py-2 rounded-lg hover:bg-cream"
+          >
+            Notifications
+          </Link>
 
           <button
             onClick={handleLogout}

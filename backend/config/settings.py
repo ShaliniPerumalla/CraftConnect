@@ -4,26 +4,17 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-<<<<<<< HEAD
-# Build paths inside the project like this: BASE_DIR / "subdir".
-=======
 # Build paths inside the project
->>>>>>> origin/develop
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load environment variables from .env
 load_dotenv(BASE_DIR / ".env")
 
-<<<<<<< HEAD
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-craftconnect-dev-key-fallback-xyz123")
-=======
 # Add local Python libraries if available
 pylibs_dir = BASE_DIR / ".pylibs"
 if pylibs_dir.exists() and str(pylibs_dir) not in sys.path:
     sys.path.insert(0, str(pylibs_dir))
 
->>>>>>> origin/develop
 
 # Security settings
 SECRET_KEY = os.getenv(
@@ -31,16 +22,12 @@ SECRET_KEY = os.getenv(
     "django-insecure-makermatch-default-key-change-in-production",
 )
 
-<<<<<<< HEAD
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'testserver', '*']
-=======
 DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1")
 
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
 ]
->>>>>>> origin/develop
 
 
 # Application definition
@@ -67,6 +54,7 @@ INSTALLED_APPS = [
     "reviews",
     "notifications",
     "complaints",
+    "admin_portal",
 ]
 
 
@@ -105,18 +93,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-<<<<<<< HEAD
-
-# Database
-# Using SQLite for local development to bypass MySQL authentication errors
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
-=======
 
 # Database configuration
 # Use MySQL when configured, otherwise use SQLite for local development.
@@ -144,7 +120,6 @@ else:
             "NAME": BASE_DIR / "db.sqlite3",
         }
     }
->>>>>>> origin/develop
 
 
 # Password validation

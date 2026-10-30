@@ -37,7 +37,7 @@ export default function QuotationComparison({
           Waiting for Quotations
         </h3>
         <p className="text-xs text-ink-soft max-w-md mx-auto mt-2">
-          Your custom requirement #{requirement?.id} is live! Creators are reviewing your design specifications and will submit tailored quotations shortly.
+          Your custom order for "{requirement?.title || "Custom Craft"}" is live! Creators are reviewing your design specifications and will submit tailored quotations shortly.
         </p>
       </div>
     );
@@ -85,7 +85,7 @@ export default function QuotationComparison({
             Customer Quotation Comparison
           </div>
           <h2 className="font-display text-2xl sm:text-3xl font-semibold text-ink">
-            Compare Quotations for #{requirement?.id}
+            Compare Quotations for {requirement?.title || "Custom Craft"}
           </h2>
           <p className="text-xs sm:text-sm text-ink-soft mt-1">
             {requirement?.title} • Target Budget: ₹
@@ -261,7 +261,7 @@ export default function QuotationComparison({
               Commission This Artisan?
             </h3>
             <p className="text-xs text-ink-soft mt-1">
-              You are selecting {selectedQuoteForConfirm.creator?.name}'s quotation for #{requirement?.id}.
+              You are selecting {selectedQuoteForConfirm.creator?.name}'s quotation for "{requirement?.title || "Custom Craft"}".
             </p>
 
             <div className="bg-cream/60 rounded-2xl p-4 my-5 border border-border text-xs space-y-2">

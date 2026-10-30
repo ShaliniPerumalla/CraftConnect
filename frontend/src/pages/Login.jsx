@@ -52,7 +52,7 @@ export default function Login() {
     });
 
     if (role === 'creator') {
-      navigate('/requirements');
+      navigate('/creator/home');
     } else {
       navigate('/');
     }

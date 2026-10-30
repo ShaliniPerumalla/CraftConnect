@@ -153,29 +153,41 @@ export default function Hero() {
 
             <div className="absolute top-12 right-16 w-28 h-28 rounded-full border border-amber/30 z-0" />
 
-            <div className="absolute top-4 right-2 w-[66%] h-[64%] rounded-[34px] overflow-hidden bg-white border-[8px] border-white shadow-[0_25px_60px_rgba(60,45,35,0.18)] rotate-[5deg] transition-transform duration-700 hover:rotate-[2deg] hover:scale-[1.02] z-10">
+            <Link
+              to="/craft/p1"
+              title="Handcrafted Wooden Serving Board - View details"
+              className="absolute top-4 right-2 w-[66%] h-[64%] rounded-[34px] overflow-hidden bg-white border-[8px] border-white shadow-[0_25px_60px_rgba(60,45,35,0.18)] rotate-[5deg] transition-transform duration-700 hover:rotate-[2deg] hover:scale-[1.02] z-10 block cursor-pointer group"
+            >
               <img
                 src={heroImages[0]}
                 alt="Handmade wooden craft"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
-            </div>
+            </Link>
 
-            <div className="absolute left-1 top-[20%] w-[65%] h-[67%] rounded-[34px] overflow-hidden bg-white border-[8px] border-white shadow-[0_30px_70px_rgba(60,45,35,0.24)] rotate-[-6deg] transition-transform duration-700 hover:rotate-[-3deg] hover:scale-[1.02] z-20">
+            <Link
+              to="/craft/p2"
+              title="Handmade Ceramic Pottery - View details"
+              className="absolute left-1 top-[20%] w-[65%] h-[67%] rounded-[34px] overflow-hidden bg-white border-[8px] border-white shadow-[0_30px_70px_rgba(60,45,35,0.24)] rotate-[-6deg] transition-transform duration-700 hover:rotate-[-3deg] hover:scale-[1.02] z-20 block cursor-pointer group"
+            >
               <img
                 src={heroImages[1]}
                 alt="Handmade pottery"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
-            </div>
+            </Link>
 
-            <div className="absolute right-0 bottom-3 w-[36%] h-[37%] rounded-[26px] overflow-hidden bg-white border-[6px] border-white shadow-[0_22px_50px_rgba(60,45,35,0.2)] rotate-[7deg] transition-transform duration-700 hover:rotate-[3deg] hover:scale-[1.04] z-30">
+            <Link
+              to="/craft/p3"
+              title="Handcrafted Gold Jewelry - View details"
+              className="absolute right-0 bottom-3 w-[36%] h-[37%] rounded-[26px] overflow-hidden bg-white border-[6px] border-white shadow-[0_22px_50px_rgba(60,45,35,0.2)] rotate-[7deg] transition-transform duration-700 hover:rotate-[3deg] hover:scale-[1.04] z-30 block cursor-pointer group"
+            >
               <img
                 src={heroImages[2]}
                 alt="Handmade jewelry"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
-            </div>
+            </Link>
 
             <div className="absolute left-[45%] top-[8%] z-40 bg-white rounded-2xl px-4 py-3 shadow-[0_15px_40px_rgba(60,45,35,0.16)] border border-border -rotate-2">
 

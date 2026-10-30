@@ -60,15 +60,15 @@ export default function QuotationDetailModal({
               <span className="text-xs uppercase font-mono font-bold tracking-wider text-amber-dark bg-amber/10 px-2.5 py-1 rounded-lg">
                 Official Quotation Slip
               </span>
-              <span className="text-xs font-mono text-ink-muted">
-                #{quotation.quoteNumber || quotation.id}
+              <span className="text-xs font-semibold text-ink-muted">
+                {requirement?.title || "Custom Order"}
               </span>
             </div>
             <h3 className="font-display text-2xl font-bold text-ink mt-2">
               Quotation for {requirement?.title || "Custom Order"}
             </h3>
             <p className="text-xs text-ink-soft mt-0.5">
-              Requirement Ref: #{requirement?.id || quotation.requirementId}
+              Product: {requirement?.title || "Custom Handcrafted Piece"}
             </p>
           </div>
         </div>
