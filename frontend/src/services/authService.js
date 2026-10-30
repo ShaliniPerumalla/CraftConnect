@@ -10,21 +10,6 @@ export const registerUser = async (userData) => {
   return response.data;
 };
 
-export const getCurrentUser = async () => {
-  const response = await api.get("/auth/me/");
-  return response.data;
-};
-
-export const updateProfile = async (profileData) => {
-  const response = await api.patch("/auth/me/", profileData);
-  return response.data;
-};
-
-export const deleteAccount = async () => {
-  const response = await api.delete("/auth/me/");
-  return response.data;
-};
-
 export const forgotPassword = async (email) => {
   const response = await api.post("/auth/forgot-password/", {
     email,
@@ -32,15 +17,17 @@ export const forgotPassword = async (email) => {
   return response.data;
 };
 
-export const resetPassword = async (token, password, confirmPassword) => {
+export const resetPassword = async (token, password) => {
   const response = await api.post(
     `/auth/reset-password/${token}/`,
-    { password, confirm_password: confirmPassword }
+    { password }
   );
   return response.data;
 };
 
 export const verifyEmail = async (token) => {
-  const response = await api.get(`/auth/verify-email/${token}/`);
+  const response = await api.post(
+    `/auth/verify-email/${token}/`
+  );
   return response.data;
 };

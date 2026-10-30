@@ -1,7 +1,5 @@
 // src/pages/CraftDetails.jsx
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 

@@ -1,5 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
-
 // src/context/CraftsContext.jsx
 
 import {

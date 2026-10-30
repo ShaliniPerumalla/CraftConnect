@@ -1,6 +1,18 @@
 // src/components/requirements/QuotationDetailModal.jsx
 
-import { X, Star, Check, Printer, BadgeCheck } from "lucide-react";
+import {
+  X,
+  Star,
+  Clock,
+  Truck,
+  Check,
+  ShieldCheck,
+  Printer,
+  Calendar,
+  Layers,
+  FileText,
+  BadgeCheck,
+} from "lucide-react";
 
 export default function QuotationDetailModal({
   quotation,

@@ -1,5 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
-
 // src/components/requirements/RequirementStepper.jsx
 
 import {
@@ -7,6 +5,7 @@ import {
   Layers,
   Briefcase,
   Sparkles,
+  ChevronRight,
   Check,
   ArrowRight,
   ArrowLeft,
@@ -125,6 +124,7 @@ export default function RequirementStepper({
         {STEPS.map((step, index) => {
           const isActive = step.id === activeStep;
           const isCompleted = index < currentIndex;
+          const Icon = step.icon;
 
           return (
             <button

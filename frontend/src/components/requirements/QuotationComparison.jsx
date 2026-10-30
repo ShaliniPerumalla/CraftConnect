@@ -6,9 +6,14 @@ import {
   Check,
   Star,
   Clock,
+  Truck,
+  Eye,
+  ArrowRight,
   ShieldCheck,
   CheckCircle2,
+  AlertCircle,
   X,
+  FileCheck,
 } from "lucide-react";
 
 import QuotationCard from "./QuotationCard";

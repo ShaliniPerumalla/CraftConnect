@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { verifyEmail } from "../services/authService";
 
 export default function EmailVerification() {
   const { token } = useParams();
+  const navigate = useNavigate();
 
   const [status, setStatus] = useState("verifying");
 
@@ -12,7 +13,7 @@ export default function EmailVerification() {
       try {
         await verifyEmail(token);
         setStatus("success");
-      } catch {
+      } catch (error) {
         setStatus("error");
       }
     };

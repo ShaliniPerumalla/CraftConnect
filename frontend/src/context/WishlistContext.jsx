@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 
 // src/context/WishlistContext.jsx
 

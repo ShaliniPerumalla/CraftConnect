@@ -1,4 +1,7 @@
-import { Bell } from "lucide-react";
+import {
+  Bell,
+  Sparkles,
+} from "lucide-react";
 
 import { useState } from "react";
 

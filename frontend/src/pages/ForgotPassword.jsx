@@ -1,20 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Mail, ArrowLeft, ArrowRight } from "lucide-react";
 
 import AuthLayout from "../components/auth/AuthLayout";
 import AuthInput from "../components/auth/AuthInput";
 import AuthMessage from "../components/auth/AuthMessage";
-import { forgotPassword } from "../services/authService";
 
 export default function ForgotPassword() {
-  const [mounted] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
 
-  async function handleSubmit(e) {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  function handleSubmit(e) {
     e.preventDefault();
 
     if (!email.trim()) {
@@ -30,18 +33,11 @@ export default function ForgotPassword() {
     setError("");
     setSubmitting(true);
 
-    try {
-      await forgotPassword(email.trim());
-      setSent(true);
-    } catch (submitError) {
-      const message =
-        submitError?.response?.data?.message ||
-        submitError?.response?.data?.detail ||
-        "Unable to send the reset link right now.";
-      setError(message);
-    } finally {
+    // Frontend-only simulation
+    setTimeout(() => {
       setSubmitting(false);
-    }
+      setSent(true);
+    }, 900);
   }
 
   return (

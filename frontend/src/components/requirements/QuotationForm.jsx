@@ -1,9 +1,19 @@
 // src/components/requirements/QuotationForm.jsx
 
 import { useState } from "react";
-import { Send, Wand2 } from "lucide-react";
-
-const DEFAULT_COMPLETION_DATE = "2026-11-01";
+import {
+  Send,
+  Calendar,
+  IndianRupee,
+  Clock,
+  Truck,
+  Sparkles,
+  Layers,
+  FileText,
+  ShieldCheck,
+  CheckCircle2,
+  Wand2,
+} from "lucide-react";
 
 export default function QuotationForm({
   requirement,
@@ -23,7 +33,9 @@ export default function QuotationForm({
   const [formData, setFormData] = useState({
     price: 1250,
     productionTime: "5 days",
-    estimatedCompletionDate: DEFAULT_COMPLETION_DATE,
+    estimatedCompletionDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
     materials: "Epoxy Resin + Wood",
     deliveryCharge: 100,
     description:
@@ -49,7 +61,9 @@ export default function QuotationForm({
     setFormData({
       price: 1250,
       productionTime: "5 days",
-      estimatedCompletionDate: DEFAULT_COMPLETION_DATE,
+      estimatedCompletionDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0],
       materials: "Epoxy Resin + Wood",
       deliveryCharge: 100,
       description:

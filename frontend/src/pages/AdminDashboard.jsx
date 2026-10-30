@@ -9,6 +9,7 @@ import {
   BarChart3,
   ShieldCheck,
   Bell,
+  Search,
   MoreHorizontal,
   Clock3,
   CheckCircle2,
@@ -53,6 +54,48 @@ const sidebarItems = [
   {
     label: "Creator verification",
     icon: ShieldCheck,
+  },
+];
+
+const users = [
+  {
+    id: "USR-001",
+    name: "Rahul",
+    email: "rahul@example.com",
+    status: "Active",
+  },
+  {
+    id: "USR-002",
+    name: "Priya",
+    email: "priya@example.com",
+    status: "Active",
+  },
+  {
+    id: "USR-003",
+    name: "Ananya",
+    email: "ananya@example.com",
+    status: "Pending",
+  },
+];
+
+const creators = [
+  {
+    id: "CRT-001",
+    name: "Anu Crafts",
+    category: "Jewelry",
+    status: "Verified",
+  },
+  {
+    id: "CRT-002",
+    name: "XYZ Art",
+    category: "Resin Art",
+    status: "Verified",
+  },
+  {
+    id: "CRT-003",
+    name: "Priya Creations",
+    category: "Handmade Gifts",
+    status: "Pending",
   },
 ];
 

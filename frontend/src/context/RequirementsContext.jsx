@@ -1,12 +1,10 @@
-/* eslint-disable react-refresh/only-export-components */
-
 // src/context/RequirementsContext.jsx
 
 import { createContext, useContext, useEffect, useState } from "react";
 
 const RequirementsContext = createContext(null);
 
-const STORAGE_KEY = "CraftConnect_requirements";
+const STORAGE_KEY = "makermatch_requirements";
 
 const initialRequirements = [
   {
