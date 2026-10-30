@@ -1,5 +1,3 @@
-// src/components/Navbar.jsx
-
 import {
   Link,
   NavLink,
@@ -14,22 +12,30 @@ import {
   LogIn,
   UserPlus,
   UserRound,
+  ChevronDown,
   LayoutDashboard,
   LogOut,
-  Package,
 } from "lucide-react";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
 
 import NotificationBell from "./notifications/NotificationBell";
+import useAuth from "../hooks/useAuth";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+
   const navigate = useNavigate();
+
+  const {
+    user,
+    isAuthenticated,
+    logout,
+  } = useAuth();
 
   const { wishlistCount } = useWishlist();
   const { cartItems } = useCart();
@@ -41,22 +47,11 @@ export default function Navbar() {
       0
     ) || 0;
 
-  // Sync user state from localStorage
-  useEffect(() => {
-    const storedUser = localStorage.getItem("craftconnect_user");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (err) {
-        console.error("Error parsing stored user:", err);
-      }
-    }
-  }, []);
+  /* ======================================================
+     ROLE-BASED NAVIGATION
+  ====================================================== */
 
-  const isCreator = user?.role === "creator";
-
-  // BUYER NAVIGATION LINKS (Includes My Orders)
-  const buyerNavItems = [
+  const navItems = [
     {
       label: "Home",
       path: "/",
@@ -73,47 +68,66 @@ export default function Navbar() {
       label: "Creators",
       path: "/creators",
     },
-    {
-      label: "Custom Order",
-      path: "/requirements",
-    },
-    {
-      label: "My Orders",
-      path: "/orders",
-    },
   ];
 
-  // CREATOR NAVIGATION LINKS
-  const creatorNavItems = [
-    {
-      label: "Dashboard",
-      path: "/creator-dashboard",
-    },
-    {
-      label: "My Crafts",
-      path: "/creator/crafts",
-    },
-    {
-      label: "Add Craft",
-      path: "/creator/add-craft",
-    },
-    {
-      label: "Incoming Orders",
-      path: "/creator/orders",
-    },
-  ];
+  if (isAuthenticated && user?.role === "customer") {
+    navItems.push(
+      {
+        label: "Custom Order",
+        path: "/requirements",
+      },
+      {
+        label: "Orders",
+        path: "/orders",
+      }
+    );
+  }
 
-  const currentNavItems = isCreator ? creatorNavItems : buyerNavItems;
+  if (isAuthenticated && user?.role === "creator") {
+    navItems.push(
+      {
+        label: "My Crafts",
+        path: "/creator/crafts",
+      },
+      {
+        label: "Orders",
+        path: "/creator/orders",
+      }
+    );
+  }
+
+  if (isAuthenticated && user?.role === "admin") {
+    navItems.push({
+      label: "Admin",
+      path: "/admin",
+    });
+  }
+
+  /* ======================================================
+     HELPERS
+  ====================================================== */
 
   function closeMobileMenu() {
     setMobileMenuOpen(false);
   }
 
   function handleLogout() {
-    localStorage.removeItem("craftconnect_user");
-    setUser(null);
+    logout();
+    setProfileOpen(false);
     closeMobileMenu();
     navigate("/login");
+  }
+
+  function getDashboardPath() {
+    if (user?.role === "creator") {
+      return "/creator-dashboard";
+    }
+
+    if (user?.role === "admin") {
+      return "/admin";
+    }
+
+    return "/profile";
   }
 
   return (
@@ -128,6 +142,7 @@ export default function Navbar() {
         border-border
       "
     >
+
       <div
         className="
           max-w-7xl
@@ -137,6 +152,7 @@ export default function Navbar() {
           lg:px-8
         "
       >
+
         <div
           className="
             h-16
@@ -147,10 +163,13 @@ export default function Navbar() {
             gap-4
           "
         >
-          {/* LOGO */}
+
+          {/* ======================================================
+              LOGO
+          ====================================================== */}
 
           <Link
-            to={isCreator ? "/creator-dashboard" : "/"}
+            to="/"
             onClick={closeMobileMenu}
             className="
               font-display
@@ -159,23 +178,17 @@ export default function Navbar() {
               text-ink
               shrink-0
               tracking-tight
-              flex
-              items-center
-              gap-2
             "
           >
             Craft
             <span className="text-amber">
               Connect
             </span>
-            {isCreator && (
-              <span className="text-[10px] font-sans font-bold uppercase bg-forest text-white px-2 py-0.5 rounded-full tracking-wider">
-                Creator
-              </span>
-            )}
           </Link>
 
-          {/* DESKTOP NAV */}
+          {/* ======================================================
+              DESKTOP NAV
+          ====================================================== */}
 
           <nav
             className="
@@ -185,7 +198,8 @@ export default function Navbar() {
               gap-5
             "
           >
-            {currentNavItems.map((item) => (
+
+            {navItems.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
@@ -200,9 +214,12 @@ export default function Navbar() {
                 {item.label}
               </NavLink>
             ))}
+
           </nav>
 
-          {/* DESKTOP ACTIONS */}
+          {/* ======================================================
+              DESKTOP ACTIONS
+          ====================================================== */}
 
           <div
             className="
@@ -213,107 +230,13 @@ export default function Navbar() {
               shrink-0
             "
           >
-            <NotificationBell />
 
-            {isCreator ? (
-              /* CREATOR ACTIONS */
+            {/* Logged-in controls */}
+            {isAuthenticated ? (
               <>
-                <Link
-                  to="/creator-dashboard"
-                  className="
-                    group
-                    relative
-                    w-10
-                    h-10
-                    rounded-full
-                    flex
-                    items-center
-                    justify-center
-                    text-ink-soft
-                    hover:bg-white
-                    hover:text-amber-dark
-                    transition-all
-                  "
-                  aria-label="Creator Dashboard"
-                  title="Creator Dashboard"
-                >
-                  <LayoutDashboard size={19} />
-                </Link>
+                <NotificationBell />
 
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="
-                    inline-flex
-                    items-center
-                    gap-2
-                    px-4
-                    py-2.5
-                    rounded-full
-                    border
-                    border-border
-                    text-ink-soft
-                    hover:bg-white
-                    hover:text-rose
-                    text-sm
-                    font-medium
-                    transition-colors
-                    ml-2
-                  "
-                  title="Logout"
-                >
-                  <LogOut size={15} />
-                  Logout
-                </button>
-              </>
-            ) : (
-              /* BUYER ACTIONS */
-              <>
-                {/* PROFILE */}
-
-                <Link
-                  to="/customer-profile"
-                  className="
-                    group
-                    relative
-                    w-10
-                    h-10
-                    rounded-full
-                    flex
-                    items-center
-                    justify-center
-                    text-ink-soft
-                    hover:bg-white
-                    hover:text-amber-dark
-                    transition-all
-                  "
-                  aria-label="Customer profile"
-                  title="My Profile"
-                >
-                  <UserRound
-                    size={19}
-                    strokeWidth={1.8}
-                  />
-
-                  {user && (
-                    <span
-                      className="
-                        absolute
-                        bottom-1
-                        right-1
-                        w-2
-                        h-2
-                        rounded-full
-                        bg-forest
-                        border-2
-                        border-cream
-                      "
-                    />
-                  )}
-                </Link>
-
-                {/* WISHLIST */}
-
+                {/* Wishlist */}
                 <Link
                   to="/wishlist"
                   className="
@@ -367,8 +290,7 @@ export default function Navbar() {
                   )}
                 </Link>
 
-                {/* CART */}
-
+                {/* Cart */}
                 <Link
                   to="/cart"
                   className="
@@ -415,85 +337,199 @@ export default function Navbar() {
                   )}
                 </Link>
 
-                {!user ? (
-                  <>
-                    {/* LOGIN */}
+                {/* Profile dropdown */}
+                <div className="relative">
 
-                    <Link
-                      to="/login"
-                      className="
-                        inline-flex
-                        items-center
-                        gap-2
-                        px-5
-                        py-2.5
-                        rounded-full
-                        bg-ink
-                        text-cream
-                        text-sm
-                        font-medium
-                        hover:bg-amber-dark
-                        transition-colors
-                      "
-                    >
-                      <LogIn size={15} />
-                      Login
-                    </Link>
-
-                    {/* REGISTER */}
-
-                    <Link
-                      to="/register"
-                      className="
-                        inline-flex
-                        items-center
-                        gap-2
-                        px-5
-                        py-2.5
-                        rounded-full
-                        bg-forest
-                        text-white
-                        text-sm
-                        font-medium
-                        hover:opacity-90
-                        transition-all
-                      "
-                    >
-                      <UserPlus size={15} />
-                      Register
-                    </Link>
-                  </>
-                ) : (
                   <button
                     type="button"
-                    onClick={handleLogout}
+                    onClick={() =>
+                      setProfileOpen((previous) => !previous)
+                    }
                     className="
-                      inline-flex
+                      flex
                       items-center
-                      gap-1.5
-                      px-4
+                      gap-2
+                      px-3
                       py-2
                       rounded-full
-                      border
-                      border-border
-                      text-ink-soft
                       hover:bg-white
-                      hover:text-rose
-                      text-xs
-                      font-medium
-                      ml-2
                       transition-colors
                     "
                   >
-                    <LogOut size={14} />
-                    Logout
+                    <span
+                      className="
+                        w-9
+                        h-9
+                        rounded-full
+                        bg-forest
+                        text-cream
+                        flex
+                        items-center
+                        justify-center
+                      "
+                    >
+                      <UserRound size={18} />
+                    </span>
+
+                    <span className="text-sm font-medium text-ink max-w-[100px] truncate">
+                      {user?.name || "Account"}
+                    </span>
+
+                    <ChevronDown
+                      size={16}
+                      className="text-ink-soft"
+                    />
                   </button>
-                )}
+
+                  {profileOpen && (
+                    <div
+                      className="
+                        absolute
+                        right-0
+                        top-14
+                        w-56
+                        bg-white
+                        border
+                        border-border
+                        rounded-2xl
+                        shadow-lg
+                        p-2
+                        z-50
+                      "
+                    >
+
+                      <div className="px-3 py-3 border-b border-border mb-1">
+                        <p className="text-sm font-semibold text-ink truncate">
+                          {user?.name || "User"}
+                        </p>
+
+                        <p className="text-xs text-ink-soft truncate">
+                          {user?.email || ""}
+                        </p>
+
+                        <p className="text-xs text-amber-dark capitalize mt-1">
+                          {user?.role || "customer"}
+                        </p>
+                      </div>
+
+                      <Link
+                        to={getDashboardPath()}
+                        onClick={() => setProfileOpen(false)}
+                        className="
+                          flex
+                          items-center
+                          gap-3
+                          px-3
+                          py-2.5
+                          rounded-xl
+                          text-sm
+                          text-ink-soft
+                          hover:bg-cream
+                          hover:text-ink
+                        "
+                      >
+                        <LayoutDashboard size={17} />
+                        Dashboard
+                      </Link>
+
+                      <Link
+                        to="/profile"
+                        onClick={() => setProfileOpen(false)}
+                        className="
+                          flex
+                          items-center
+                          gap-3
+                          px-3
+                          py-2.5
+                          rounded-xl
+                          text-sm
+                          text-ink-soft
+                          hover:bg-cream
+                          hover:text-ink
+                        "
+                      >
+                        <UserRound size={17} />
+                        My Profile
+                      </Link>
+
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="
+                          w-full
+                          flex
+                          items-center
+                          gap-3
+                          px-3
+                          py-2.5
+                          rounded-xl
+                          text-sm
+                          text-red-600
+                          hover:bg-red-50
+                        "
+                      >
+                        <LogOut size={17} />
+                        Logout
+                      </button>
+
+                    </div>
+                  )}
+
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Login */}
+                <Link
+                  to="/login"
+                  className="
+                    inline-flex
+                    items-center
+                    gap-2
+                    px-5
+                    py-2.5
+                    rounded-full
+                    bg-ink
+                    text-cream
+                    text-sm
+                    font-medium
+                    hover:bg-amber-dark
+                    transition-colors
+                  "
+                >
+                  <LogIn size={15} />
+                  Login
+                </Link>
+
+                {/* Register */}
+                <Link
+                  to="/register"
+                  className="
+                    inline-flex
+                    items-center
+                    gap-2
+                    px-5
+                    py-2.5
+                    rounded-full
+                    bg-forest
+                    text-white
+                    text-sm
+                    font-medium
+                    hover:opacity-90
+                    transition-all
+                  "
+                >
+                  <UserPlus size={15} />
+                  Register
+                </Link>
               </>
             )}
+
           </div>
 
-          {/* MOBILE ACTIONS */}
+          {/* ======================================================
+              MOBILE ACTIONS
+          ====================================================== */}
 
           <div
             className="
@@ -503,31 +539,10 @@ export default function Navbar() {
               gap-1
             "
           >
-            <NotificationBell />
 
-            {!isCreator && (
+            {isAuthenticated && (
               <>
-                {/* MOBILE PROFILE */}
-
-                <Link
-                  to="/customer-profile"
-                  onClick={closeMobileMenu}
-                  className="
-                    w-10
-                    h-10
-                    rounded-full
-                    flex
-                    items-center
-                    justify-center
-                    text-ink-soft
-                    hover:bg-white
-                  "
-                  aria-label="Customer profile"
-                >
-                  <UserRound size={19} />
-                </Link>
-
-                {/* MOBILE WISHLIST */}
+                <NotificationBell />
 
                 <Link
                   to="/wishlist"
@@ -573,14 +588,10 @@ export default function Navbar() {
                         justify-center
                       "
                     >
-                      {wishlistCount > 99
-                        ? "99+"
-                        : wishlistCount}
+                      {wishlistCount}
                     </span>
                   )}
                 </Link>
-
-                {/* MOBILE CART */}
 
                 <Link
                   to="/cart"
@@ -619,16 +630,12 @@ export default function Navbar() {
                         justify-center
                       "
                     >
-                      {cartCount > 99
-                        ? "99+"
-                        : cartCount}
+                      {cartCount}
                     </span>
                   )}
                 </Link>
               </>
             )}
-
-            {/* MOBILE MENU BUTTON */}
 
             <button
               type="button"
@@ -658,7 +665,9 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* MOBILE MENU */}
+        {/* ======================================================
+            MOBILE MENU
+        ====================================================== */}
 
         {mobileMenuOpen && (
           <div
@@ -677,7 +686,7 @@ export default function Navbar() {
                 gap-1
               "
             >
-              {currentNavItems.map((item) => (
+              {navItems.map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}
@@ -694,34 +703,11 @@ export default function Navbar() {
                 </NavLink>
               ))}
 
-              {/* NOTIFICATIONS */}
-
-              <Link
-                to="/notifications"
-                onClick={closeMobileMenu}
-                className="
-                  flex
-                  items-center
-                  gap-3
-                  px-4
-                  py-3
-                  rounded-xl
-                  text-sm
-                  text-ink-soft
-                  hover:bg-white
-                  hover:text-ink
-                "
-              >
-                <BellIcon />
-                Notifications
-              </Link>
-
-              {!isCreator && (
+              {isAuthenticated ? (
                 <>
-                  {/* ORDERS (MOBILE) */}
-
+                  {/* Notifications */}
                   <Link
-                    to="/orders"
+                    to="/notifications"
                     onClick={closeMobileMenu}
                     className="
                       flex
@@ -733,16 +719,16 @@ export default function Navbar() {
                       text-sm
                       text-ink-soft
                       hover:bg-white
+                      hover:text-ink
                     "
                   >
-                    <Package size={17} />
-                    My Orders
+                    <span>🔔</span>
+                    Notifications
                   </Link>
 
-                  {/* PROFILE */}
-
+                  {/* Profile */}
                   <Link
-                    to="/customer-profile"
+                    to="/profile"
                     onClick={closeMobileMenu}
                     className="
                       flex
@@ -760,96 +746,32 @@ export default function Navbar() {
                     My Profile
                   </Link>
 
-                  {/* WISHLIST */}
-
-                  <Link
-                    to="/wishlist"
-                    onClick={closeMobileMenu}
+                  {/* Logout */}
+                  <button
+                    type="button"
+                    onClick={handleLogout}
                     className="
+                      mt-2
                       flex
                       items-center
-                      gap-3
-                      px-4
+                      justify-center
+                      gap-2
+                      px-5
                       py-3
-                      rounded-xl
+                      rounded-full
+                      text-red-600
+                      bg-red-50
                       text-sm
-                      text-ink-soft
-                      hover:bg-white
+                      font-medium
                     "
                   >
-                    <Heart
-                      size={17}
-                      className={
-                        wishlistCount > 0
-                          ? "text-rose fill-rose"
-                          : ""
-                      }
-                    />
-
-                    Liked Crafts
-
-                    {wishlistCount > 0 && (
-                      <span className="ml-auto text-xs text-rose font-semibold">
-                        {wishlistCount}
-                      </span>
-                    )}
-                  </Link>
-
-                  {/* CART */}
-
-                  <Link
-                    to="/cart"
-                    onClick={closeMobileMenu}
-                    className="
-                      flex
-                      items-center
-                      gap-3
-                      px-4
-                      py-3
-                      rounded-xl
-                      text-sm
-                      text-ink-soft
-                      hover:bg-white
-                    "
-                  >
-                    <ShoppingBag size={17} />
-                    Cart
-
-                    {cartCount > 0 && (
-                      <span className="ml-auto text-xs text-amber-dark font-semibold">
-                        {cartCount}
-                      </span>
-                    )}
-                  </Link>
+                    <LogOut size={16} />
+                    Logout
+                  </button>
                 </>
-              )}
-
-              {user ? (
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="
-                    mt-3
-                    flex
-                    items-center
-                    justify-center
-                    gap-2
-                    px-5
-                    py-3
-                    rounded-full
-                    bg-rose/10
-                    text-rose
-                    text-sm
-                    font-medium
-                  "
-                >
-                  <LogOut size={16} />
-                  Logout
-                </button>
               ) : (
                 <>
-                  {/* LOGIN */}
-
+                  {/* Login */}
                   <Link
                     to="/login"
                     onClick={closeMobileMenu}
@@ -872,8 +794,7 @@ export default function Navbar() {
                     Login
                   </Link>
 
-                  {/* REGISTER */}
-
+                  {/* Register */}
                   <Link
                     to="/register"
                     onClick={closeMobileMenu}
@@ -896,18 +817,11 @@ export default function Navbar() {
                   </Link>
                 </>
               )}
+
             </nav>
           </div>
         )}
       </div>
     </header>
-  );
-}
-
-function BellIcon() {
-  return (
-    <span className="text-base">
-      🔔
-    </span>
   );
 }
