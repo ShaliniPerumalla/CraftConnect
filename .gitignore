@@ -24,11 +24,3 @@ backend/staticfiles/
 # Node.js dependencies
 node_modules/
 **/node_modules/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.env
-db.sqlite3
-*.sqlite3
-backend_old/
