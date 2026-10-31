@@ -4,294 +4,175 @@ import {
   useEffect,
   useMemo,
   useState,
+  useCallback,
 } from "react";
+import {
+  fetchNotifications as apiFetchNotifications,
+  markNotificationRead as apiMarkNotificationRead,
+  markAllNotificationsRead as apiMarkAllNotificationsRead,
+  deleteNotification as apiDeleteNotification,
+} from "../services/member4Service";
 
 const NotificationContext = createContext(null);
-
 const STORAGE_KEY = "craftconnect_notifications";
 
-// ======================================================
-// SAMPLE NOTIFICATIONS
-// ======================================================
-
-const initialNotifications = [
-  {
-    id: "notification-1",
-    type: "quotation",
-    title: "New quotation received",
-    message:
-      "Anu Crafts has sent you a quotation for your custom jewelry requirement.",
-    time: "Just now",
-    read: false,
-    createdAt: Date.now(),
-  },
-
-  {
-    id: "notification-2",
-    type: "design",
-    title: "Creator uploaded a design",
-    message:
-      "Anu Crafts has uploaded a new design for your custom order. Check it and share your feedback.",
-    time: "10 min ago",
-    read: false,
-    createdAt: Date.now() - 10 * 60 * 1000,
-  },
-
-  {
-    id: "notification-3",
-    type: "production",
-    title: "Your order entered production",
-    message:
-      "Your custom order has been approved and is now being prepared by the creator.",
-    time: "1 hour ago",
-    read: false,
-    createdAt: Date.now() - 60 * 60 * 1000,
-  },
-
-  {
-    id: "notification-4",
-    type: "delivery",
-    title: "Order ready for delivery",
-    message:
-      "Your custom order is ready for delivery. You can now track its delivery status.",
-    time: "3 hours ago",
-    read: false,
-    createdAt: Date.now() - 3 * 60 * 60 * 1000,
-  },
-
-  {
-    id: "notification-5",
-    type: "delivered",
-    title: "Order delivered",
-    message:
-      "Your custom order has been successfully delivered. Don't forget to share your experience with the creator.",
-    time: "Yesterday",
-    read: false,
-    createdAt: Date.now() - 24 * 60 * 60 * 1000,
-  },
-];
-
-// ======================================================
-// TIME FORMATTER
-// ======================================================
-
 function formatTime(timestamp) {
-  const difference = Date.now() - timestamp;
+  if (!timestamp) return "Just now";
+  const time = typeof timestamp === "string" ? new Date(timestamp).getTime() : timestamp;
+  const diff = Date.now() - time;
 
-  const seconds = Math.floor(difference / 1000);
+  const seconds = Math.floor(diff / 1000);
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
 
-  if (seconds < 30) {
-    return "Just now";
-  }
-
-  if (minutes < 60) {
-    return `${minutes} min ago`;
-  }
-
-  if (hours < 24) {
-    return `${hours} hr ago`;
-  }
-
-  if (days === 1) {
-    return "Yesterday";
-  }
-
+  if (seconds < 30) return "Just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  if (hours < 24) return `${hours} hr ago`;
+  if (days === 1) return "Yesterday";
   return `${days} days ago`;
 }
 
-// ======================================================
-// PROVIDER
-// ======================================================
+function normalizeNotification(item) {
+  return {
+    ...item,
+    id: String(item.id),
+    type: item.notification_type || item.type || "general",
+    title: item.title,
+    message: item.message,
+    read: Boolean(item.is_read !== undefined ? item.is_read : item.read),
+    time: item.time || formatTime(item.created_at || item.createdAt),
+    createdAt: item.created_at ? new Date(item.created_at).getTime() : item.createdAt || Date.now(),
+    link: item.link || "",
+  };
+}
 
 export function NotificationProvider({ children }) {
   const [notifications, setNotifications] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-
-      // No saved notifications → use sample data
-      if (!saved) {
-        return initialNotifications;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(normalizeNotification);
+        }
       }
-
-      const parsed = JSON.parse(saved);
-
-      // Invalid saved data → use sample data
-      if (!Array.isArray(parsed)) {
-        return initialNotifications;
-      }
-
-      return parsed;
-    } catch (error) {
-      console.error(
-        "Could not load notifications:",
-        error
-      );
-
-      return initialNotifications;
+    } catch (e) {
+      console.warn("Could not load cached notifications:", e);
     }
+    return [];
   });
 
-  // ======================================================
-  // SAVE TO LOCAL STORAGE
-  // ======================================================
+  const [loading, setLoading] = useState(false);
+
+  // Load from backend
+  const loadNotifications = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await apiFetchNotifications();
+      if (Array.isArray(data)) {
+        const normalized = data.map(normalizeNotification);
+        setNotifications(normalized);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+      }
+    } catch (err) {
+      console.warn("apiFetchNotifications failed, using local notifications:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadNotifications();
+  }, [loadNotifications]);
 
   useEffect(() => {
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(notifications)
-      );
-    } catch (error) {
-      console.error(
-        "Could not save notifications:",
-        error
-      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications));
+    } catch (e) {
+      console.error("Could not cache notifications:", e);
     }
   }, [notifications]);
 
-  // ======================================================
-  // UNREAD COUNT
-  // ======================================================
-
   const unreadCount = useMemo(() => {
-    return notifications.filter(
-      (notification) => !notification.read
-    ).length;
+    return notifications.filter((n) => !n.read).length;
   }, [notifications]);
 
-  // ======================================================
-// MARK AS READ
-// ======================================================
+  async function markAsRead(notificationId) {
+    // Optimistic UI update
+    setNotifications((current) =>
+      current.map((n) => (n.id === String(notificationId) ? { ...n, read: true } : n))
+    );
 
-function markAsRead(notificationId) {
-  setNotifications((current) =>
-    current.map((notification) =>
-      notification.id === notificationId
-        ? {
-            ...notification,
-            read: true,
-          }
-        : notification
-    )
-  );
-}
+    try {
+      if (String(notificationId).match(/^\d+$/)) {
+        await apiMarkNotificationRead(notificationId);
+      }
+    } catch (err) {
+      console.warn("apiMarkNotificationRead failed:", err);
+    }
+  }
 
-// ======================================================
-// MARK ALL AS READ
-// ======================================================
+  async function markAllAsRead() {
+    setNotifications((current) =>
+      current.map((n) => ({ ...n, read: true }))
+    );
 
-function markAllAsRead() {
-  setNotifications((current) =>
-    current.map((notification) => ({
-      ...notification,
-      read: true,
-    }))
-  );
-}
+    try {
+      await apiMarkAllNotificationsRead();
+    } catch (err) {
+      console.warn("apiMarkAllNotificationsRead failed:", err);
+    }
+  }
 
-  // ======================================================
-  // ADD NOTIFICATION
-  // ======================================================
-
-  function addNotification({
-    type = "system",
-    title,
-    message,
-  }) {
+  function addNotification({ type = "system", title, message, link = "" }) {
     const createdAt = Date.now();
-
     const newNotification = {
-      id: `notification-${createdAt}-${Math.random()
-        .toString(36)
-        .slice(2, 8)}`,
-
+      id: `notification-${createdAt}-${Math.random().toString(36).slice(2, 8)}`,
       type,
-
       title,
-
       message,
-
       time: "Just now",
-
-      // New notifications are unread
       read: false,
-
       createdAt,
+      link,
     };
 
-    setNotifications((current) => [
-      newNotification,
-      ...current,
-    ]);
-
+    setNotifications((current) => [newNotification, ...current]);
     return newNotification;
   }
 
-  // ======================================================
-  // DELETE NOTIFICATION
-  // ======================================================
-
-  function deleteNotification(notificationId) {
+  async function deleteNotification(notificationId) {
     setNotifications((current) =>
-      current.filter(
-        (notification) =>
-          notification.id !== notificationId
-      )
+      current.filter((n) => n.id !== String(notificationId))
     );
-  }
 
-  // ======================================================
-  // CLEAR ALL NOTIFICATIONS
-  // ======================================================
+    try {
+      if (String(notificationId).match(/^\d+$/)) {
+        await apiDeleteNotification(notificationId);
+      }
+    } catch (err) {
+      console.warn("apiDeleteNotification failed:", err);
+    }
+  }
 
   function clearNotifications() {
     setNotifications([]);
   }
 
-  // ======================================================
-  // RESET NOTIFICATIONS
-  // ======================================================
-
   function resetNotifications() {
-    setNotifications(
-      initialNotifications.map((notification) => ({
-        ...notification,
-      }))
-    );
+    loadNotifications();
   }
-
-  // ======================================================
-  // REFRESH TIME LABELS
-  // ======================================================
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setNotifications((current) =>
-        current.map((notification) => ({
-          ...notification,
-          time: formatTime(notification.createdAt),
-        }))
-      );
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // ======================================================
-  // CONTEXT VALUE
-  // ======================================================
 
   const value = {
     notifications,
     unreadCount,
+    loading,
+    refreshNotifications: loadNotifications,
 
-    addNotification,
     markAsRead,
     markAllAsRead,
-
+    addNotification,
     deleteNotification,
     clearNotifications,
     resetNotifications,
@@ -304,18 +185,10 @@ function markAllAsRead() {
   );
 }
 
-// ======================================================
-// CUSTOM HOOK
-// ======================================================
-
 export function useNotifications() {
   const context = useContext(NotificationContext);
-
   if (!context) {
-    throw new Error(
-      "useNotifications must be used inside NotificationProvider"
-    );
+    throw new Error("useNotifications must be used inside NotificationProvider");
   }
-
   return context;
 }

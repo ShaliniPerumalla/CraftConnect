@@ -4,159 +4,119 @@ import {
   useEffect,
   useMemo,
   useState,
+  useCallback,
 } from "react";
+import {
+  fetchComplaints as apiFetchComplaints,
+  createComplaint as apiCreateComplaint,
+  updateComplaint as apiUpdateComplaint,
+  resolveComplaint as apiResolveComplaint,
+  fetchComplaintStatistics as apiFetchComplaintStatistics,
+} from "../services/member4Service";
 
 const ComplaintContext = createContext(null);
-
 const STORAGE_KEY = "craftconnect_complaints";
 
-// ======================================================
-// INITIAL COMPLAINTS
-// ======================================================
-
-const initialComplaints = [
-  {
-    id: "complaint-1",
-    orderId: "ORD-1001",
-
-    craftName: "Handmade Ceramic Vase",
-    creator: "Ananya Ceramics",
-    orderTotal: 1499,
-
-    subject: "Order delivery delayed",
-    description:
-      "My order was expected to arrive yesterday, but I have not received it yet.",
-
-    category: "Delivery",
-    priority: "Medium",
-    status: "Pending",
-
-    createdAt: Date.now() - 2 * 60 * 60 * 1000,
-    updatedAt: Date.now() - 2 * 60 * 60 * 1000,
-  },
-
-  {
-    id: "complaint-2",
-    orderId: "ORD-1002",
-
-    craftName: "Handcrafted Wooden Bowl",
-    creator: "Arjun Woodworks",
-    orderTotal: 1798,
-
-    subject: "Product received damaged",
-    description:
-      "The handmade item arrived with visible damage to the packaging and product.",
-
-    category: "Product",
-    priority: "High",
-    status: "In Review",
-
-    createdAt: Date.now() - 24 * 60 * 60 * 1000,
-    updatedAt: Date.now() - 5 * 60 * 60 * 1000,
-  },
-];
-
-// ======================================================
-// TIME FORMATTER
-// ======================================================
-
 function formatTime(timestamp) {
-  const difference = Date.now() - timestamp;
+  if (!timestamp) return "Just now";
+  const time = typeof timestamp === "string" ? new Date(timestamp).getTime() : timestamp;
+  const diff = Date.now() - time;
 
-  const seconds = Math.floor(difference / 1000);
+  const seconds = Math.floor(diff / 1000);
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
 
-  if (seconds < 30) {
-    return "Just now";
-  }
-
-  if (minutes < 60) {
-    return `${minutes} min ago`;
-  }
-
-  if (hours < 24) {
-    return `${hours} hr ago`;
-  }
-
-  if (days === 1) {
-    return "Yesterday";
-  }
-
+  if (seconds < 30) return "Just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  if (hours < 24) return `${hours} hr ago`;
+  if (days === 1) return "Yesterday";
   return `${days} days ago`;
 }
 
-// ======================================================
-// PROVIDER
-// ======================================================
+function normalizeComplaint(item) {
+  const idStr = String(item.ticket_id || item.id || `complaint-${Date.now()}`);
+  return {
+    ...item,
+    id: idStr,
+    backendId: item.id,
+    ticketId: item.ticket_id || idStr,
+    orderId: item.order_number || (item.order ? (typeof item.order === 'object' ? item.order.order_number : String(item.order)) : item.orderId || "N/A"),
+    craftName: item.craftName || "Custom Order Item",
+    creator: item.creator || (item.order?.creator?.username) || "Maker Artisan",
+    orderTotal: item.orderTotal || item.order?.total_amount || 0,
+    subject: item.subject,
+    description: item.description,
+    category: item.category || "Other",
+    priority: item.priority || "Medium",
+    status: item.status || "Pending",
+    adminNotes: item.admin_notes || item.adminNotes || "",
+    resolutionNotes: item.resolution_notes || item.resolutionNotes || "",
+    createdAt: item.created_at ? new Date(item.created_at).getTime() : item.createdAt || Date.now(),
+    updatedAt: item.updated_at ? new Date(item.updated_at).getTime() : item.updatedAt || Date.now(),
+    time: item.time || formatTime(item.created_at || item.createdAt),
+  };
+}
 
 export function ComplaintProvider({ children }) {
   const [complaints, setComplaints] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-
-      if (!saved) {
-        return initialComplaints;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(normalizeComplaint);
+        }
       }
-
-      const parsed = JSON.parse(saved);
-
-      if (!Array.isArray(parsed)) {
-        return initialComplaints;
-      }
-
-      return parsed;
-    } catch (error) {
-      console.error(
-        "Could not load complaints:",
-        error
-      );
-
-      return initialComplaints;
+    } catch (e) {
+      console.warn("Could not load cached complaints:", e);
     }
+    return [];
   });
 
-  // ======================================================
-  // SAVE TO LOCAL STORAGE
-  // ======================================================
+  const [loading, setLoading] = useState(false);
+
+  // Load from real API
+  const loadComplaints = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await apiFetchComplaints();
+      if (Array.isArray(data)) {
+        const normalized = data.map(normalizeComplaint);
+        setComplaints(normalized);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+      }
+    } catch (err) {
+      console.warn("apiFetchComplaints failed, retaining cached data:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadComplaints();
+  }, [loadComplaints]);
 
   useEffect(() => {
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(complaints)
-      );
-    } catch (error) {
-      console.error(
-        "Could not save complaints:",
-        error
-      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(complaints));
+    } catch (e) {
+      console.error("Could not cache complaints:", e);
     }
   }, [complaints]);
 
-  // ======================================================
-  // REFRESH TIME LABELS
-  // ======================================================
+  // Statistics
+  const statistics = useMemo(() => {
+    const total = complaints.length;
+    const pending = complaints.filter((c) => c.status === "Pending").length;
+    const inReview = complaints.filter((c) => c.status === "In Review").length;
+    const resolved = complaints.filter((c) => c.status === "Resolved" || c.status === "Closed").length;
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setComplaints((current) =>
-        current.map((complaint) => ({
-          ...complaint,
-          time: formatTime(complaint.createdAt),
-        }))
-      );
-    }, 30000);
+    return { total, pending, inReview, resolved };
+  }, [complaints]);
 
-    return () => clearInterval(interval);
-  }, []);
-
-  // ======================================================
-  // ADD COMPLAINT
-  // ======================================================
-
-  function addComplaint({
+  // Add complaint
+  async function addComplaint({
     orderId = "",
     craftName = "",
     creator = "",
@@ -166,137 +126,112 @@ export function ComplaintProvider({ children }) {
     category = "Other",
     priority = "Medium",
   }) {
-    const now = Date.now();
-
-    const newComplaint = {
-      id: `complaint-${now}-${Math.random()
-        .toString(36)
-        .slice(2, 8)}`,
-
-      orderId: orderId.trim(),
-
-      craftName: craftName.trim(),
-
-      creator: creator.trim(),
-
-      orderTotal,
-
-      subject: subject.trim(),
-
-      description: description.trim(),
-
-      category,
-
-      priority,
-
-      status: "Pending",
-
-      createdAt: now,
-
-      updatedAt: now,
-
-      time: "Just now",
-    };
-
-    setComplaints((current) => [
-      newComplaint,
-      ...current,
-    ]);
-
-    return newComplaint;
+    try {
+      const created = await apiCreateComplaint({
+        order_id: orderId || null,
+        subject,
+        description,
+        category,
+        priority,
+      });
+      const normalized = normalizeComplaint({
+        ...created,
+        craftName,
+        creator,
+        orderTotal,
+      });
+      setComplaints((current) => [normalized, ...current]);
+      return normalized;
+    } catch (err) {
+      console.warn("apiCreateComplaint failed, saving locally:", err);
+      const local = normalizeComplaint({
+        id: `CMP-${Date.now().toString().slice(-6)}`,
+        orderId,
+        craftName,
+        creator,
+        orderTotal,
+        subject,
+        description,
+        category,
+        priority,
+        status: "Pending",
+      });
+      setComplaints((current) => [local, ...current]);
+      return local;
+    }
   }
 
-  // ======================================================
-  // UPDATE COMPLAINT STATUS
-  // ======================================================
+  // Update complaint status (Admin)
+  async function updateComplaintStatus(complaintId, status) {
+    const target = complaints.find((c) => c.id === String(complaintId) || c.ticketId === String(complaintId));
+    const backendId = target?.backendId || target?.ticketId || complaintId;
 
-  function updateComplaintStatus(
-    complaintId,
-    status
-  ) {
-    setComplaints((current) =>
-      current.map((complaint) =>
-        complaint.id === complaintId
-          ? {
-              ...complaint,
-              status,
-              updatedAt: Date.now(),
-            }
-          : complaint
-      )
-    );
+    try {
+      const updated = await apiUpdateComplaint(backendId, { status });
+      const normalized = normalizeComplaint(updated);
+      setComplaints((current) =>
+        current.map((c) => (c.id === String(complaintId) ? normalized : c))
+      );
+    } catch (err) {
+      console.warn("apiUpdateComplaint failed, updating locally:", err);
+      setComplaints((current) =>
+        current.map((complaint) =>
+          complaint.id === complaintId
+            ? { ...complaint, status, updatedAt: Date.now() }
+            : complaint
+        )
+      );
+    }
   }
 
-  // ======================================================
-  // DELETE COMPLAINT
-  // ======================================================
+  // Resolve complaint (Admin)
+  async function resolveComplaint(complaintId, { resolution_notes, status = "Resolved" }) {
+    const target = complaints.find((c) => c.id === String(complaintId) || c.ticketId === String(complaintId));
+    const backendId = target?.backendId || target?.ticketId || complaintId;
+
+    try {
+      const updated = await apiResolveComplaint(backendId, { resolution_notes, status });
+      const normalized = normalizeComplaint(updated);
+      setComplaints((current) =>
+        current.map((c) => (c.id === String(complaintId) ? normalized : c))
+      );
+      return normalized;
+    } catch (err) {
+      console.warn("apiResolveComplaint failed, updating locally:", err);
+      setComplaints((current) =>
+        current.map((c) =>
+          c.id === String(complaintId)
+            ? { ...c, status, resolutionNotes: resolution_notes, updatedAt: Date.now() }
+            : c
+        )
+      );
+    }
+  }
 
   function deleteComplaint(complaintId) {
     setComplaints((current) =>
-      current.filter(
-        (complaint) =>
-          complaint.id !== complaintId
-      )
+      current.filter((c) => c.id !== String(complaintId))
     );
   }
-
-  // ======================================================
-  // CLEAR ALL COMPLAINTS
-  // ======================================================
 
   function clearComplaints() {
     setComplaints([]);
   }
 
-  // ======================================================
-  // RESET COMPLAINTS
-  // ======================================================
-
   function resetComplaints() {
-    setComplaints(
-      initialComplaints.map((complaint) => ({
-        ...complaint,
-      }))
-    );
+    loadComplaints();
   }
-
-  // ======================================================
-  // STATISTICS
-  // ======================================================
-
-  const statistics = useMemo(() => {
-    return {
-      total: complaints.length,
-
-      pending: complaints.filter(
-        (complaint) =>
-          complaint.status === "Pending"
-      ).length,
-
-      inReview: complaints.filter(
-        (complaint) =>
-          complaint.status === "In Review"
-      ).length,
-
-      resolved: complaints.filter(
-        (complaint) =>
-          complaint.status === "Resolved"
-      ).length,
-    };
-  }, [complaints]);
-
-  // ======================================================
-  // CONTEXT VALUE
-  // ======================================================
 
   const value = {
     complaints,
     statistics,
+    loading,
+    refreshComplaints: loadComplaints,
 
     addComplaint,
     updateComplaintStatus,
+    resolveComplaint,
     deleteComplaint,
-
     clearComplaints,
     resetComplaints,
   };
@@ -308,18 +243,10 @@ export function ComplaintProvider({ children }) {
   );
 }
 
-// ======================================================
-// CUSTOM HOOK
-// ======================================================
-
 export function useComplaints() {
   const context = useContext(ComplaintContext);
-
   if (!context) {
-    throw new Error(
-      "useComplaints must be used inside ComplaintProvider"
-    );
+    throw new Error("useComplaints must be used inside ComplaintProvider");
   }
-
   return context;
 }

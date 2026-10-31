@@ -206,16 +206,21 @@ export function RequirementsProvider({ children }) {
 
   // Customer selects/accepts quotation
   const acceptQuotation = (requirementId, quotationId) => {
+    let acceptedReq = null;
+    let acceptedQuote = null;
+
     setRequirements((prev) =>
       prev.map((req) => {
         if (req.id !== requirementId) return req;
 
-        const updatedQuotations = req.quotations.map((q) => ({
+        const updatedQuotations = (req.quotations || []).map((q) => ({
           ...q,
           status: q.id === quotationId ? "Accepted" : "Declined",
         }));
 
         const selected = updatedQuotations.find((q) => q.id === quotationId);
+        acceptedReq = req;
+        acceptedQuote = selected;
 
         return {
           ...req,
@@ -225,6 +230,34 @@ export function RequirementsProvider({ children }) {
         };
       })
     );
+
+    // Sync into orders flow so Order is immediately available
+    try {
+      const existing = JSON.parse(localStorage.getItem("craftconnect_orders") || "[]");
+      const quotePrice = acceptedQuote?.price || acceptedQuote?.totalPrice || 1200;
+      const newOrder = {
+        id: `ORD-${Date.now().toString().slice(-4)}`,
+        orderNumber: `ORD-${Date.now().toString().slice(-4)}`,
+        craftName: acceptedReq?.title || "Custom Handcrafted Piece",
+        image: acceptedReq?.referenceImages?.[0] || "https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=900&auto=format&fit=crop",
+        creator: acceptedQuote?.creatorName || acceptedQuote?.creator?.name || "Independent Creator",
+        creatorId: acceptedQuote?.creatorId || acceptedQuote?.creator?.id || "c1",
+        customer: {
+          name: acceptedReq?.customerName || "Customer",
+          email: acceptedReq?.customerEmail || "customer@example.com",
+        },
+        price: quotePrice,
+        total: quotePrice,
+        quantity: 1,
+        status: "Pending",
+        rawStatus: "pending",
+        date: new Date().toISOString().split("T")[0],
+        address: acceptedReq?.location || "Delivery address",
+      };
+      localStorage.setItem("craftconnect_orders", JSON.stringify([newOrder, ...existing]));
+    } catch (err) {
+      console.warn("Could not save order on quotation acceptance:", err);
+    }
   };
 
   // Delete requirement

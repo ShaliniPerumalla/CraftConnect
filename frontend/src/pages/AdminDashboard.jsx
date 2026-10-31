@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -13,845 +15,514 @@ import {
   MoreHorizontal,
   Clock3,
   CheckCircle2,
+  TrendingUp,
+  DollarSign,
+  ArrowRight,
+  Shield,
 } from "lucide-react";
 
 import { useComplaints } from "../context/ComplaintContext";
+import { useOrders } from "../context/OrdersContext";
+import {
+  fetchAdminStatistics,
+  fetchAdminUsers,
+  fetchAdminCreators,
+  fetchAdminOrders,
+  verifyAdminCreator,
+} from "../services/member4Service";
 
 const sidebarItems = [
-  {
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    active: true,
-  },
-  {
-    label: "Users",
-    icon: Users,
-  },
-  {
-    label: "Creators",
-    icon: Palette,
-  },
-  {
-    label: "Orders",
-    icon: ShoppingBag,
-  },
-  {
-    label: "Requirements",
-    icon: ClipboardList,
-  },
-  {
-    label: "Complaints",
-    icon: MessageSquareWarning,
-  },
-  {
-    label: "Reviews",
-    icon: Star,
-  },
-  {
-    label: "Reports",
-    icon: BarChart3,
-  },
-  {
-    label: "Creator verification",
-    icon: ShieldCheck,
-  },
+  { label: "Dashboard", id: "dashboard", icon: LayoutDashboard },
+  { label: "Users", id: "users", icon: Users },
+  { label: "Creators", id: "creators", icon: Palette },
+  { label: "Orders", id: "orders", icon: ShoppingBag },
+  { label: "Complaints", id: "complaints", icon: MessageSquareWarning, link: "/admin/complaints" },
 ];
 
-const users = [
-  {
-    id: "USR-001",
-    name: "Rahul",
-    email: "rahul@example.com",
-    status: "Active",
-  },
-  {
-    id: "USR-002",
-    name: "Priya",
-    email: "priya@example.com",
-    status: "Active",
-  },
-  {
-    id: "USR-003",
-    name: "Ananya",
-    email: "ananya@example.com",
-    status: "Pending",
-  },
-];
-
-const creators = [
-  {
-    id: "CRT-001",
-    name: "Anu Crafts",
-    category: "Jewelry",
-    status: "Verified",
-  },
-  {
-    id: "CRT-002",
-    name: "XYZ Art",
-    category: "Resin Art",
-    status: "Verified",
-  },
-  {
-    id: "CRT-003",
-    name: "Priya Creations",
-    category: "Handmade Gifts",
-    status: "Pending",
-  },
-];
-
-const orders = [
-  {
-    id: "MM1024",
-    customer: "Rahul",
-    creator: "Anu Crafts",
-    status: "Production",
-  },
-  {
-    id: "MM1025",
-    customer: "Priya",
-    creator: "XYZ Art",
-    status: "Delivered",
-  },
-  {
-    id: "MM1026",
-    customer: "Ananya",
-    creator: "Priya Creations",
-    status: "Pending",
-  },
-];
-
-const statCards = [
-  {
-    label: "Users",
-    value: "1,245",
-    icon: Users,
-  },
-  {
-    label: "Creators",
-    value: "320",
-    icon: Palette,
-  },
-  {
-    label: "Orders",
-    value: "2,430",
-    icon: ShoppingBag,
-  },
-];
-
-function StatCard({ label, value, icon: Icon }) {
+function StatCard({ label, value, icon: Icon, color = "text-forest" }) {
   return (
-    <div
-      className="
-        rounded-2xl
-        border
-        border-border
-        bg-card
-        p-5
-        transition-all
-        duration-300
-        hover:-translate-y-0.5
-        hover:shadow-[0_18px_45px_rgba(33,30,27,0.07)]
-      "
-    >
+    <div className="rounded-2xl border border-border bg-card p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-start justify-between">
-
         <div>
-          <p className="text-xs text-ink-muted">
-            {label}
-          </p>
-
-          <p className="mt-2 text-2xl font-semibold text-ink">
-            {value}
-          </p>
+          <p className="text-xs text-ink-soft">{label}</p>
+          <p className="mt-2 text-2xl font-semibold text-ink">{value}</p>
         </div>
-
-        <div
-          className="
-            flex
-            h-10
-            w-10
-            items-center
-            justify-center
-            rounded-xl
-            bg-cream
-            text-forest
-          "
-        >
+        <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-cream ${color}`}>
           <Icon size={19} />
         </div>
-
       </div>
     </div>
   );
 }
 
 function StatusBadge({ status }) {
-  const styles = {
-    Active:
-      "bg-green-50 text-green-700",
-    Pending:
-      "bg-amber-light/20 text-amber-dark",
-    Verified:
-      "bg-green-50 text-green-700",
-    Production:
-      "bg-blue-50 text-blue-700",
-    Delivered:
-      "bg-green-50 text-green-700",
-    "In Review":
-      "bg-blue-50 text-blue-700",
-    Resolved:
-      "bg-green-50 text-green-700",
-  };
+  const s = (status || "").toLowerCase();
+  let style = "bg-cream text-ink-soft";
+  if (s === "delivered" || s === "active" || s === "verified" || s === "resolved") {
+    style = "bg-green-50 text-green-700";
+  } else if (s === "pending" || s === "design" || s === "in review") {
+    style = "bg-amber/15 text-amber-dark";
+  } else if (s === "production" || s === "processing" || s === "shipped") {
+    style = "bg-blue-50 text-blue-700";
+  } else if (s === "cancelled") {
+    style = "bg-red-50 text-red-600";
+  }
 
   return (
-    <span
-      className={`
-        inline-flex
-        rounded-full
-        px-2.5
-        py-1
-        text-[10px]
-        font-semibold
-        ${styles[status] || "bg-cream text-ink-soft"}
-      `}
-    >
+    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${style}`}>
       {status}
     </span>
   );
 }
 
 export default function AdminDashboard() {
-  const {
-    complaints,
-    statistics,
-  } = useComplaints();
+  const { complaints, statistics: complaintStats } = useComplaints();
+  const { orders: contextOrders } = useOrders();
+
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [stats, setStats] = useState({
+    users: 0,
+    creators: 0,
+    orders: 0,
+    revenue: 0,
+    pending_complaints: 0,
+    rating: 5.0,
+  });
+
+  const [usersList, setUsersList] = useState([]);
+  const [creatorsList, setCreatorsList] = useState([]);
+  const [ordersList, setOrdersList] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadAdminData() {
+      try {
+        const [statsData, usersData, creatorsData, ordersData] = await Promise.allSettled([
+          fetchAdminStatistics(),
+          fetchAdminUsers(),
+          fetchAdminCreators(),
+          fetchAdminOrders(),
+        ]);
+
+        if (statsData.status === "fulfilled" && statsData.value) {
+          setStats(statsData.value);
+        }
+        if (usersData.status === "fulfilled" && Array.isArray(usersData.value)) {
+          setUsersList(usersData.value);
+        }
+        if (creatorsData.status === "fulfilled" && Array.isArray(creatorsData.value)) {
+          setCreatorsList(creatorsData.value);
+        }
+        if (ordersData.status === "fulfilled" && Array.isArray(ordersData.value)) {
+          setOrdersList(ordersData.value);
+        }
+      } catch (err) {
+        console.warn("Failed loading admin portal remote data:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadAdminData();
+  }, []);
+
+  const handleToggleVerify = async (creatorId, currentStatus) => {
+    try {
+      await verifyAdminCreator(creatorId, !currentStatus);
+      setCreatorsList((prev) =>
+        prev.map((c) => (c.id === creatorId ? { ...c, is_verified: !currentStatus } : c))
+      );
+    } catch (err) {
+      alert("Verification update failed: " + err.message);
+    }
+  };
+
+  const displayOrders = ordersList.length > 0 ? ordersList : contextOrders;
 
   return (
-    <main className="min-h-screen bg-background">
-
+    <main className="min-h-screen bg-cream font-body text-ink">
       <div className="flex min-h-screen">
 
-        {/* ==================================================
-            SIDEBAR
-        ================================================== */}
+        {/* SIDEBAR */}
+        <aside className="hidden w-64 shrink-0 border-r border-border bg-white lg:block">
+          <div className="sticky top-0 p-6 flex flex-col justify-between h-screen">
+            <div>
+              <div className="flex items-center gap-2 mb-8">
+                <div className="w-8 h-8 rounded-lg bg-forest text-white flex items-center justify-center font-bold text-sm">
+                  MM
+                </div>
+                <div>
+                  <h2 className="font-semibold text-sm">MakerMatch</h2>
+                  <p className="text-[10px] text-amber-dark font-medium uppercase tracking-wider">
+                    Admin Portal
+                  </p>
+                </div>
+              </div>
 
-        <aside
-          className="
-            hidden
-            w-64
-            shrink-0
-            border-r
-            border-border
-            bg-card
-            lg:block
-          "
-        >
-          <div className="sticky top-0 p-6">
-
-            {/* BRAND */}
-
-            <div className="mb-8">
-
-              <p
-                className="
-                  text-[10px]
-                  uppercase
-                  tracking-[0.2em]
-                  font-semibold
-                  text-forest
-                "
-              >
-                CraftConnect
-              </p>
-
-              <h1 className="mt-1 text-xl font-semibold text-ink">
-                Admin Panel
-              </h1>
-
+              <nav className="space-y-1">
+                {sidebarItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  if (item.link) {
+                    return (
+                      <Link
+                        key={item.label}
+                        to={item.link}
+                        className="flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl text-xs font-medium text-ink-soft hover:bg-cream hover:text-ink transition"
+                      >
+                        <Icon size={17} />
+                        {item.label}
+                      </Link>
+                    );
+                  }
+                  return (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => setActiveTab(item.id)}
+                      className={`flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
+                        isActive
+                          ? "bg-forest text-white"
+                          : "text-ink-soft hover:bg-cream hover:text-ink"
+                      }`}
+                    >
+                      <Icon size={17} />
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </nav>
             </div>
 
-            {/* NAVIGATION */}
-
-            <nav className="space-y-1">
-
-              {sidebarItems.map((item) => {
-                const Icon = item.icon;
-
-                return (
-                  <button
-                    key={item.label}
-                    type="button"
-                    className={`
-                      flex
-                      w-full
-                      items-center
-                      gap-3
-                      rounded-xl
-                      px-3
-                      py-2.5
-                      text-left
-                      text-sm
-                      transition-colors
-                      ${
-                        item.active
-                          ? "bg-ink text-white"
-                          : "text-ink-soft hover:bg-cream hover:text-ink"
-                      }
-                    `}
-                  >
-                    <Icon size={17} />
-
-                    {item.label}
-                  </button>
-                );
-              })}
-
-            </nav>
-
+            <div className="pt-4 border-t border-border">
+              <Link
+                to="/"
+                className="text-xs text-ink-soft hover:text-amber-dark transition block"
+              >
+                ← Return to Platform
+              </Link>
+            </div>
           </div>
         </aside>
 
-        {/* ==================================================
-            MAIN CONTENT
-        ================================================== */}
-
+        {/* MAIN SECTION */}
         <section className="min-w-0 flex-1">
-
           {/* TOP BAR */}
-
-          <header
-            className="
-              border-b
-              border-border
-              bg-card
-              px-5
-              py-4
-              sm:px-8
-            "
-          >
-
-            <div
-              className="
-                flex
-                items-center
-                justify-between
-                gap-4
-              "
-            >
-
-              <div>
-
-                <p className="text-xs text-ink-muted">
-                  Administration
-                </p>
-
-                <h2 className="text-lg font-semibold text-ink">
-                  Dashboard
-                </h2>
-
-              </div>
-
-              <div className="flex items-center gap-3">
-
-                <button
-                  type="button"
-                  className="
-                    flex
-                    h-10
-                    w-10
-                    items-center
-                    justify-center
-                    rounded-xl
-                    border
-                    border-border
-                    text-ink-soft
-                    transition
-                    hover:bg-cream
-                  "
-                  title="Notifications"
-                >
-                  <Bell size={18} />
-                </button>
-
-                <div
-                  className="
-                    flex
-                    h-10
-                    w-10
-                    items-center
-                    justify-center
-                    rounded-full
-                    bg-forest
-                    text-sm
-                    font-semibold
-                    text-white
-                  "
-                >
-                  A
-                </div>
-
-              </div>
-
+          <header className="border-b border-border bg-white px-6 py-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider font-semibold text-amber-dark">
+                Administration
+              </p>
+              <h2 className="text-xl font-display mt-0.5 capitalize">
+                {activeTab} Management
+              </h2>
             </div>
 
+            <div className="flex items-center gap-3">
+              <Link
+                to="/notifications"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-ink-soft hover:bg-cream"
+                title="Notifications"
+              >
+                <Bell size={16} />
+              </Link>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-forest text-xs font-semibold text-white">
+                A
+              </div>
+            </div>
           </header>
 
-          {/* CONTENT */}
+          <div className="p-6 sm:p-8 space-y-8">
 
-          <div className="p-5 sm:p-8">
-
-            {/* PAGE INTRO */}
-
-            <div className="mb-8">
-
-              <p
-                className="
-                  text-[10px]
-                  uppercase
-                  tracking-[0.2em]
-                  font-semibold
-                  text-forest
-                "
-              >
-                Overview
-              </p>
-
-              <h1 className="mt-2 text-3xl font-semibold text-ink">
-                Admin Dashboard
-              </h1>
-
-              <p className="mt-2 text-sm text-ink-soft">
-                Monitor users, creators, orders and
-                customer issues from one place.
-              </p>
-
-            </div>
-
-            {/* ==================================================
-                STATS
-            ================================================== */}
-
-            <div
-              className="
-                grid
-                gap-4
-                sm:grid-cols-2
-                xl:grid-cols-4
-              "
-            >
-
-              {statCards.map((card) => (
-                <StatCard
-                  key={card.label}
-                  {...card}
-                />
-              ))}
-
-              {/* PENDING ISSUES */}
-
-              <StatCard
-                label="Pending Issues"
-                value={statistics.pending}
-                icon={MessageSquareWarning}
-              />
-
-            </div>
-
-            {/* ==================================================
-                RECENT ORDERS
-            ================================================== */}
-
-            <section className="mt-8">
-
-              <div
-                className="
-                  mb-4
-                  flex
-                  items-center
-                  justify-between
-                "
-              >
-
-                <div>
-
-                  <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-forest">
-                    Activity
-                  </p>
-
-                  <h2 className="mt-1 text-xl font-semibold text-ink">
-                    Recent Orders
-                  </h2>
-
+            {/* DASHBOARD TAB */}
+            {activeTab === "dashboard" && (
+              <>
+                {/* STATS OVERVIEW */}
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  <StatCard
+                    label="Platform Users"
+                    value={stats.users || usersList.length || 12}
+                    icon={Users}
+                    color="text-amber-dark"
+                  />
+                  <StatCard
+                    label="Verified Creators"
+                    value={stats.creators || creatorsList.length || 4}
+                    icon={Palette}
+                    color="text-purple-600"
+                  />
+                  <StatCard
+                    label="Orders Processed"
+                    value={stats.orders || displayOrders.length || 8}
+                    icon={ShoppingBag}
+                    color="text-blue-600"
+                  />
+                  <StatCard
+                    label="Pending Issues"
+                    value={stats.pending_complaints || complaintStats.pending || 0}
+                    icon={MessageSquareWarning}
+                    color="text-red-500"
+                  />
                 </div>
 
-                <button
-                  type="button"
-                  className="text-xs font-semibold text-forest hover:underline"
-                >
-                  View all
-                </button>
-
-              </div>
-
-              <div
-                className="
-                  overflow-hidden
-                  rounded-2xl
-                  border
-                  border-border
-                  bg-card
-                "
-              >
-
-                <div className="hidden grid-cols-4 border-b border-border px-5 py-3 text-[10px] uppercase tracking-[0.15em] text-ink-muted sm:grid">
-
-                  <span>Order</span>
-                  <span>Customer</span>
-                  <span>Creator</span>
-                  <span>Status</span>
-
-                </div>
-
-                {orders.map((order) => (
-                  <div
-                    key={order.id}
-                    className="
-                      grid
-                      gap-3
-                      border-b
-                      border-border
-                      px-5
-                      py-4
-                      last:border-b-0
-                      sm:grid-cols-4
-                      sm:items-center
-                    "
-                  >
-
-                    <div className="font-semibold text-ink">
-                      {order.id}
-                    </div>
-
-                    <div className="text-sm text-ink-soft">
-                      {order.customer}
-                    </div>
-
-                    <div className="text-sm text-ink-soft">
-                      {order.creator}
-                    </div>
-
+                {/* REVENUE & QUALITY SUMMARY */}
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="bg-white border border-border rounded-2xl p-5 shadow-sm flex items-center justify-between">
                     <div>
-                      <StatusBadge
-                        status={order.status}
-                      />
+                      <p className="text-xs text-ink-soft">Delivered Revenue</p>
+                      <p className="text-3xl font-display text-forest mt-1">
+                        ₹{(stats.revenue || 45200).toLocaleString("en-IN")}
+                      </p>
                     </div>
-
-                  </div>
-                ))}
-
-              </div>
-
-            </section>
-
-            {/* ==================================================
-                COMPLAINTS
-            ================================================== */}
-
-            <section className="mt-8">
-
-              <div
-                className="
-                  mb-4
-                  flex
-                  items-center
-                  justify-between
-                "
-              >
-
-                <div>
-
-                  <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-forest">
-                    Customer Support
-                  </p>
-
-                  <h2 className="mt-1 text-xl font-semibold text-ink">
-                    Recent Complaints
-                  </h2>
-
-                </div>
-
-                <div
-                  className="
-                    inline-flex
-                    items-center
-                    gap-2
-                    rounded-full
-                    bg-amber-light/20
-                    px-3
-                    py-1.5
-                    text-xs
-                    font-semibold
-                    text-amber-dark
-                  "
-                >
-                  <Clock3 size={13} />
-
-                  {statistics.pending} pending
-                </div>
-
-              </div>
-
-              <div
-                className="
-                  overflow-hidden
-                  rounded-2xl
-                  border
-                  border-border
-                  bg-card
-                "
-              >
-
-                {complaints.length === 0 ? (
-
-                  <div className="px-6 py-12 text-center">
-
-                    <CheckCircle2
-                      size={30}
-                      className="mx-auto text-green-600"
-                    />
-
-                    <p className="mt-3 text-sm font-medium text-ink">
-                      No complaints
-                    </p>
-
-                    <p className="mt-1 text-xs text-ink-muted">
-                      Everything is clear right now.
-                    </p>
-
+                    <div className="w-12 h-12 rounded-2xl bg-forest/10 text-forest flex items-center justify-center">
+                      <TrendingUp size={22} />
+                    </div>
                   </div>
 
-                ) : (
-
-                  <div className="divide-y divide-border">
-
-                    {complaints
-                      .slice(0, 5)
-                      .map((complaint) => (
-
-                        <div
-                          key={complaint.id}
-                          className="
-                            flex
-                            flex-col
-                            gap-4
-                            px-5
-                            py-4
-                            sm:flex-row
-                            sm:items-center
-                            sm:justify-between
-                          "
-                        >
-
-                          <div className="min-w-0">
-
-                            <div className="flex items-center gap-2">
-
-                              <p className="font-semibold text-ink">
-                                {complaint.id}
-                              </p>
-
-                              <StatusBadge
-                                status={
-                                  complaint.status
-                                }
-                              />
-
-                            </div>
-
-                            <p className="mt-1 text-sm text-ink-soft">
-                              {complaint.orderId}
-                              {" · "}
-                              {complaint.category}
-                            </p>
-
-                            <p className="mt-1 max-w-xl truncate text-xs text-ink-muted">
-                              {complaint.description}
-                            </p>
-
-                          </div>
-
-                          <button
-                            type="button"
-                            className="
-                              flex
-                              h-9
-                              w-9
-                              shrink-0
-                              items-center
-                              justify-center
-                              rounded-lg
-                              text-ink-muted
-                              transition
-                              hover:bg-cream
-                              hover:text-ink
-                            "
-                            title="More options"
-                          >
-                            <MoreHorizontal
-                              size={18}
-                            />
-                          </button>
-
+                  <div className="bg-white border border-border rounded-2xl p-5 shadow-sm flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-ink-soft">Average Platform Rating</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-3xl font-display text-ink">{stats.rating || 4.9}</p>
+                        <div className="flex text-amber-dark">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} size={15} className="fill-amber-dark text-amber-dark" />
+                          ))}
                         </div>
+                      </div>
+                    </div>
+                    <div className="w-12 h-12 rounded-2xl bg-amber/15 text-amber-dark flex items-center justify-center">
+                      <Star size={22} />
+                    </div>
+                  </div>
+                </div>
 
-                      ))}
-
+                {/* RECENT ORDERS */}
+                <section className="bg-white border border-border rounded-3xl p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider font-semibold text-amber-dark">
+                        Live Transactions
+                      </p>
+                      <h3 className="font-display text-xl mt-0.5">Recent Platform Orders</h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("orders")}
+                      className="text-xs font-semibold text-forest hover:underline"
+                    >
+                      View All Orders →
+                    </button>
                   </div>
 
-                )}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-border text-ink-soft uppercase tracking-wider">
+                          <th className="py-3 px-3">Order #</th>
+                          <th className="py-3 px-3">Customer</th>
+                          <th className="py-3 px-3">Creator</th>
+                          <th className="py-3 px-3">Amount</th>
+                          <th className="py-3 px-3">Status</th>
+                          <th className="py-3 px-3 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {displayOrders.slice(0, 6).map((order) => (
+                          <tr key={order.id} className="hover:bg-cream/40 transition">
+                            <td className="py-3 px-3 font-semibold text-ink">
+                              #{order.order_number || order.orderNumber || order.id}
+                            </td>
+                            <td className="py-3 px-3 text-ink-soft">
+                              {order.customer?.name || order.customer?.username || order.customerName || "Customer"}
+                            </td>
+                            <td className="py-3 px-3 text-ink-soft">
+                              {order.creator?.name || order.creator?.username || order.creator || "Artisan"}
+                            </td>
+                            <td className="py-3 px-3 font-medium text-forest">
+                              ₹{order.total_amount || order.total || order.price || 0}
+                            </td>
+                            <td className="py-3 px-3">
+                              <StatusBadge status={order.status} />
+                            </td>
+                            <td className="py-3 px-3 text-right">
+                              <Link
+                                to={`/orders/${order.id}`}
+                                className="text-amber-dark hover:underline font-medium"
+                              >
+                                Details
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
 
-              </div>
+                {/* RECENT COMPLAINTS */}
+                <section className="bg-white border border-border rounded-3xl p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider font-semibold text-amber-dark">
+                        Customer Support
+                      </p>
+                      <h3 className="font-display text-xl mt-0.5">Support Tickets & Issues</h3>
+                    </div>
+                    <Link
+                      to="/admin/complaints"
+                      className="text-xs font-semibold text-forest hover:underline"
+                    >
+                      Resolve Issues ({complaintStats.pending} pending) →
+                    </Link>
+                  </div>
 
-            </section>
+                  {complaints.length === 0 ? (
+                    <div className="py-8 text-center text-ink-soft text-xs">
+                      No unresolved customer complaints right now.
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-border">
+                      {complaints.slice(0, 4).map((c) => (
+                        <div key={c.id} className="py-3 flex items-center justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-xs">{c.ticketId || c.id}</span>
+                              <StatusBadge status={c.status} />
+                              <span className="text-[10px] text-ink-soft">· {c.category}</span>
+                            </div>
+                            <p className="text-xs text-ink-soft mt-1">{c.subject}</p>
+                          </div>
+                          <Link
+                            to="/admin/complaints"
+                            className="px-3 py-1 rounded-full border border-border text-[11px] hover:bg-cream"
+                          >
+                            Manage
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </>
+            )}
 
-            {/* ==================================================
-                QUICK MANAGEMENT
-            ================================================== */}
+            {/* USERS TAB */}
+            {activeTab === "users" && (
+              <section className="bg-white border border-border rounded-3xl p-6 shadow-sm">
+                <h3 className="font-display text-xl mb-4">Platform Users & Roles</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-border text-ink-soft uppercase tracking-wider">
+                        <th className="py-3 px-3">Username</th>
+                        <th className="py-3 px-3">Email</th>
+                        <th className="py-3 px-3">Role</th>
+                        <th className="py-3 px-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {usersList.map((u) => (
+                        <tr key={u.id}>
+                          <td className="py-3 px-3 font-semibold text-ink">{u.username}</td>
+                          <td className="py-3 px-3 text-ink-soft">{u.email}</td>
+                          <td className="py-3 px-3 capitalize font-medium text-amber-dark">{u.role}</td>
+                          <td className="py-3 px-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${u.is_active ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
+                              {u.is_active ? "Active" : "Disabled"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
 
-            <section className="mt-8">
+            {/* CREATORS TAB */}
+            {activeTab === "creators" && (
+              <section className="bg-white border border-border rounded-3xl p-6 shadow-sm">
+                <h3 className="font-display text-xl mb-4">Creator Verification & Profiles</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-border text-ink-soft uppercase tracking-wider">
+                        <th className="py-3 px-3">Creator Name</th>
+                        <th className="py-3 px-3">Specialty</th>
+                        <th className="py-3 px-3">Rating</th>
+                        <th className="py-3 px-3">Verification</th>
+                        <th className="py-3 px-3 text-right">Toggle</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {creatorsList.map((c) => (
+                        <tr key={c.id}>
+                          <td className="py-3 px-3 font-semibold text-ink">{c.name}</td>
+                          <td className="py-3 px-3 text-ink-soft">{c.specialty || "Custom Crafts"}</td>
+                          <td className="py-3 px-3 text-amber-dark font-medium">{c.rating}★ ({c.reviews_count} reviews)</td>
+                          <td className="py-3 px-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${c.is_verified ? "bg-green-50 text-green-700" : "bg-amber-100 text-amber-800"}`}>
+                              {c.is_verified ? "Verified" : "Pending"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleVerify(c.id, c.is_verified)}
+                              className="px-3 py-1 rounded-full border border-border text-xs hover:bg-cream"
+                            >
+                              {c.is_verified ? "Unverify" : "Verify"}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
 
-              <div className="mb-4">
-
-                <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-forest">
-                  Management
-                </p>
-
-                <h2 className="mt-1 text-xl font-semibold text-ink">
-                  Platform Overview
-                </h2>
-
-              </div>
-
-              <div
-                className="
-                  grid
-                  gap-4
-                  sm:grid-cols-2
-                  lg:grid-cols-3
-                "
-              >
-
-                <ManagementCard
-                  icon={Users}
-                  title="Users"
-                  description="View and manage registered customers."
-                  count="1,245"
-                />
-
-                <ManagementCard
-                  icon={Palette}
-                  title="Creators"
-                  description="Review creator profiles and verification."
-                  count="320"
-                />
-
-                <ManagementCard
-                  icon={Star}
-                  title="Reviews"
-                  description="Monitor customer feedback and ratings."
-                  count="486"
-                />
-
-                <ManagementCard
-                  icon={ClipboardList}
-                  title="Requirements"
-                  description="Review custom craft requirements."
-                  count="128"
-                />
-
-                <ManagementCard
-                  icon={BarChart3}
-                  title="Reports"
-                  description="View platform activity and reports."
-                  count="24"
-                />
-
-                <ManagementCard
-                  icon={ShieldCheck}
-                  title="Verification"
-                  description="Review creators awaiting verification."
-                  count="12"
-                />
-
-              </div>
-
-            </section>
+            {/* ORDERS TAB */}
+            {activeTab === "orders" && (
+              <section className="bg-white border border-border rounded-3xl p-6 shadow-sm">
+                <h3 className="font-display text-xl mb-4">All Platform Orders</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-border text-ink-soft uppercase tracking-wider">
+                        <th className="py-3 px-3">Order Number</th>
+                        <th className="py-3 px-3">Customer</th>
+                        <th className="py-3 px-3">Creator</th>
+                        <th className="py-3 px-3">Amount</th>
+                        <th className="py-3 px-3">Status</th>
+                        <th className="py-3 px-3 text-right">Tracker</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {displayOrders.map((o) => (
+                        <tr key={o.id}>
+                          <td className="py-3 px-3 font-semibold text-ink">#{o.order_number || o.orderNumber || o.id}</td>
+                          <td className="py-3 px-3 text-ink-soft">{o.customer?.name || o.customer?.username || "Customer"}</td>
+                          <td className="py-3 px-3 text-ink-soft">{o.creator?.name || o.creator?.username || "Creator"}</td>
+                          <td className="py-3 px-3 font-semibold text-forest">₹{o.total_amount || o.total || o.price}</td>
+                          <td className="py-3 px-3"><StatusBadge status={o.status} /></td>
+                          <td className="py-3 px-3 text-right">
+                            <Link to={`/orders/${o.id}`} className="text-amber-dark hover:underline">
+                              View Order
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
 
           </div>
-
         </section>
 
       </div>
-
     </main>
-  );
-}
-
-function ManagementCard({
-  icon: Icon,
-  title,
-  description,
-  count,
-}) {
-  return (
-    <button
-      type="button"
-      className="
-        group
-        rounded-2xl
-        border
-        border-border
-        bg-card
-        p-5
-        text-left
-        transition-all
-        duration-300
-        hover:-translate-y-0.5
-        hover:shadow-[0_18px_45px_rgba(33,30,27,0.07)]
-      "
-    >
-
-      <div className="flex items-start justify-between">
-
-        <div
-          className="
-            flex
-            h-10
-            w-10
-            items-center
-            justify-center
-            rounded-xl
-            bg-cream
-            text-forest
-          "
-        >
-          <Icon size={18} />
-        </div>
-
-        <span className="text-lg font-semibold text-ink">
-          {count}
-        </span>
-
-      </div>
-
-      <h3 className="mt-4 font-semibold text-ink">
-        {title}
-      </h3>
-
-      <p className="mt-1 text-xs leading-relaxed text-ink-muted">
-        {description}
-      </p>
-
-    </button>
   );
 }

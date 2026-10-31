@@ -206,7 +206,7 @@ export default function FileUpload({
                 </button>
               </div>
               <span className="absolute bottom-1 left-1.5 px-1.5 py-0.5 rounded bg-black/60 text-white text-[10px] font-medium backdrop-blur-xs">
-                Ref #{index + 1}
+                Photo {index + 1}
               </span>
             </div>
           ))}

@@ -74,18 +74,18 @@ export default function RequirementCard({
   return (
     <div className="bg-white border border-border rounded-2xl p-5 sm:p-6 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between group">
       <div>
-        {/* Top bar: ID & Status */}
+        {/* Top bar: Product Name & Status */}
         <div className="flex items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-cream border border-border text-ink">
-              #{requirement.id}
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-cream border border-border text-ink truncate max-w-[180px] sm:max-w-[220px]" title={requirement.title}>
+              {requirement.title}
             </span>
-            <span className="text-xs font-medium px-2.5 py-1 rounded-lg bg-cream-dark/60 text-ink-soft">
+            <span className="text-xs font-medium px-2.5 py-1 rounded-lg bg-cream-dark/60 text-ink-soft shrink-0">
               {requirement.category}
             </span>
           </div>
 
-          <div>{getStatusBadge()}</div>
+          <div className="shrink-0">{getStatusBadge()}</div>
         </div>
 
         {/* Card Body: Image & Details */}

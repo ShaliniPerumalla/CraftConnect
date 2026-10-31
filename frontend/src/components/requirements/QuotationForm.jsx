@@ -123,11 +123,11 @@ export default function QuotationForm({
       {/* Top Banner referencing the requirement */}
       <div className="bg-cream/60 border border-border rounded-2xl p-4 sm:p-5 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-amber-dark block">
-            Submitting Quotation For Requirement
+          <span className="text-[11px] font-bold uppercase tracking-wider text-amber-dark block">
+            Submitting Quotation For Product
           </span>
           <h3 className="font-display text-xl font-bold text-ink mt-0.5">
-            #{requirement?.id || "REQ001"} — {requirement?.title || "Custom Resin Name Plate"}
+            {requirement?.title || "Custom Handcrafted Piece"}
           </h3>
           <p className="text-xs text-ink-soft mt-1">
             Client Budget: ₹
