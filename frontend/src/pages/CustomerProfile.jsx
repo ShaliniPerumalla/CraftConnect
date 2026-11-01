@@ -1,6 +1,6 @@
 // src/pages/CustomerProfile.jsx
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   User,
@@ -17,6 +17,9 @@ import {
   ChevronRight,
   ShieldCheck,
   Sparkles,
+  Star,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 
 import Navbar from "../components/Navbar";
@@ -26,6 +29,11 @@ import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
 import { useOrders } from "../context/OrdersContext";
 import { useRequirements } from "../context/RequirementsContext";
+import { useReviews } from "../context/ReviewContext";
+import { useCrafts } from "../context/CraftsContext";
+import useAuth from "../hooks/useAuth";
+import { getCurrentUser, updateCurrentUser } from "../services/authService";
+import ReviewForm from "../components/Reviews/ReviewForm";
 
 const PROFILE_STORAGE_KEY = "craftconnect_customer_profile";
 
@@ -41,11 +49,12 @@ const defaultProfile = {
 
 export default function CustomerProfile() {
   // ======================================================
-  // CONTEXTS
+  // CONTEXTS & AUTH
   // ======================================================
 
-  const { wishlist = [], wishlistCount = 0 } =
-    useWishlist();
+  const { user, refreshUser, logout } = useAuth() || {};
+
+  const { wishlist = [], wishlistCount = 0 } = useWishlist();
 
   const { cartItems = [] } = useCart();
 
@@ -55,54 +64,97 @@ export default function CustomerProfile() {
 
   const { requirements = [] } = useRequirements();
 
+  const { reviews = {}, getCustomerReviews } = useReviews() || {};
+
+  const { creators = [] } = useCrafts() || {};
+
   // ======================================================
   // PROFILE STATE
   // ======================================================
 
   const [profile, setProfile] = useState(() => {
     try {
-      const savedProfile = localStorage.getItem(
-        PROFILE_STORAGE_KEY
-      );
-
+      const savedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
       if (savedProfile) {
         const parsedProfile = JSON.parse(savedProfile);
-
         return {
           ...defaultProfile,
           ...parsedProfile,
         };
       }
     } catch (error) {
-      console.error(
-        "Could not load customer profile:",
-        error
-      );
+      console.error("Could not load customer profile:", error);
     }
 
-    return defaultProfile;
+    return {
+      ...defaultProfile,
+      name: user?.name || defaultProfile.name,
+      email: user?.email || defaultProfile.email,
+    };
   });
 
   const [editMode, setEditMode] = useState(false);
-
   const [editData, setEditData] = useState(profile);
+  const [activeSection, setActiveSection] = useState("overview");
 
-  const [activeSection, setActiveSection] =
-    useState("overview");
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+
+  // Sync with remote backend user & customer profile on mount
+  useEffect(() => {
+    async function loadRemoteProfile() {
+      const token = localStorage.getItem("access_token");
+      if (!token) return;
+      setLoadingProfile(true);
+      try {
+        const remote = await getCurrentUser();
+        if (remote) {
+          const loaded = {
+            name: remote.name || remote.first_name || user?.name || defaultProfile.name,
+            email: remote.email || user?.email || defaultProfile.email,
+            phone: remote.phone || "",
+            address: remote.address || "",
+            city: remote.city || "",
+            state: remote.state || "",
+            pincode: remote.pincode || "",
+            avatar: remote.avatar || "",
+          };
+          setProfile(loaded);
+          setEditData(loaded);
+          localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(loaded));
+        }
+      } catch (e) {
+        console.warn("Could not load remote profile:", e);
+      } finally {
+        setLoadingProfile(false);
+      }
+    }
+    loadRemoteProfile();
+  }, [user?.id]);
 
   // ======================================================
-  // CART COUNT
+  // CART COUNT & REVIEWS
   // ======================================================
 
   const cartCount = useMemo(() => {
     return (
       cartItems?.reduce(
-        (total, item) =>
-          total + Number(item.quantity || 0),
+        (total, item) => total + Number(item.quantity || 0),
         0
       ) || 0
     );
   }, [cartItems]);
+
+  const customerReviews = useMemo(() => {
+    if (typeof getCustomerReviews === "function") {
+      return getCustomerReviews(user);
+    }
+    return [];
+  }, [getCustomerReviews, reviews, user]);
+
+  const reviewCount = customerReviews.length;
 
   // ======================================================
   // ORDER COUNT
@@ -125,11 +177,14 @@ export default function CustomerProfile() {
   function startEditing() {
     setEditData(profile);
     setEditMode(true);
+    setSaveError(null);
+    setSaveSuccess(false);
   }
 
   function cancelEditing() {
     setEditData(profile);
     setEditMode(false);
+    setSaveError(null);
   }
 
   function handleEditChange(event) {
@@ -142,34 +197,62 @@ export default function CustomerProfile() {
   }
 
   // ======================================================
-  // SAVE PROFILE
+  // SAVE PROFILE (PERSISTS TO DJANGO BACKEND & LOCALSTORAGE)
   // ======================================================
 
-  function saveProfile(event) {
+  async function saveProfile(event) {
     event.preventDefault();
+    setSaving(true);
+    setSaveError(null);
+    setSaveSuccess(false);
 
     const updatedProfile = {
       ...editData,
-      name:
-        editData.name.trim() ||
-        "CraftConnect Customer",
+      name: editData.name.trim() || "CraftConnect Customer",
     };
 
-    setProfile(updatedProfile);
-
     try {
+      // 1. Update in backend database via API
+      await updateCurrentUser({
+        name: updatedProfile.name,
+        email: updatedProfile.email,
+        phone: updatedProfile.phone,
+        city: updatedProfile.city,
+        state: updatedProfile.state,
+        pincode: updatedProfile.pincode,
+        address: updatedProfile.address,
+      });
+
+      // 2. Refresh AuthContext state if available
+      if (refreshUser) {
+        await refreshUser();
+      }
+
+      // 3. Update local state & localStorage
+      setProfile(updatedProfile);
       localStorage.setItem(
         PROFILE_STORAGE_KEY,
         JSON.stringify(updatedProfile)
       );
+      setSaveSuccess(true);
+      setEditMode(false);
+      setTimeout(() => setSaveSuccess(false), 4000);
     } catch (error) {
-      console.error(
-        "Could not save customer profile:",
-        error
+      console.error("Could not save customer profile:", error);
+      // Fallback local update
+      setProfile(updatedProfile);
+      localStorage.setItem(
+        PROFILE_STORAGE_KEY,
+        JSON.stringify(updatedProfile)
       );
+      setSaveError(
+        error?.response?.data?.error ||
+        "Profile saved locally, but server update failed."
+      );
+      setEditMode(false);
+    } finally {
+      setSaving(false);
     }
-
-    setEditMode(false);
   }
 
   // ======================================================
@@ -177,16 +260,19 @@ export default function CustomerProfile() {
   // ======================================================
 
   function handleLogout() {
-    const confirmed = window.confirm(
-      "Are you sure you want to logout?"
-    );
-
+    const confirmed = window.confirm("Are you sure you want to logout?");
     if (!confirmed) {
       return;
     }
 
-    // Authentication can be connected here later.
-    localStorage.removeItem("craftconnect_user");
+    if (logout) {
+      logout();
+    } else {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("craftconnect_user");
+      localStorage.removeItem("makermatch_user");
+    }
 
     window.location.href = "/login";
   }
@@ -397,6 +483,40 @@ export default function CustomerProfile() {
 
           </button>
 
+          {/* REVIEWS */}
+
+          <button
+            type="button"
+            onClick={() => setActiveSection("reviews")}
+            className="group text-left bg-white border border-border rounded-2xl p-5 hover:border-amber/40 hover:-translate-y-0.5 transition-all shadow-sm"
+          >
+
+            <div className="flex items-start justify-between">
+
+              <div className="w-10 h-10 rounded-xl bg-amber/15 flex items-center justify-center">
+                <Star
+                  size={19}
+                  className="text-amber-dark fill-amber"
+                />
+              </div>
+
+              <ChevronRight
+                size={16}
+                className="text-border group-hover:text-amber transition-colors"
+              />
+
+            </div>
+
+            <p className="font-display text-2xl mt-5">
+              {reviewCount}
+            </p>
+
+            <p className="text-xs text-ink-soft mt-1">
+              Creator reviews
+            </p>
+
+          </button>
+
           {/* CART */}
 
           <Link
@@ -429,27 +549,6 @@ export default function CustomerProfile() {
             </p>
 
           </Link>
-
-          {/* ACCOUNT */}
-
-          <div className="bg-ink text-cream rounded-2xl p-5 shadow-sm">
-
-            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-              <ShieldCheck
-                size={19}
-                className="text-amber"
-              />
-            </div>
-
-            <p className="font-display text-2xl mt-5">
-              Active
-            </p>
-
-            <p className="text-xs text-cream/60 mt-1">
-              Account status
-            </p>
-
-          </div>
 
         </div>
 
@@ -554,6 +653,27 @@ export default function CustomerProfile() {
                 )}
               </button>
 
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveSection("reviews")
+                }
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-left transition-colors ${
+                  activeSection === "reviews"
+                    ? "bg-cream text-ink font-semibold"
+                    : "text-ink-soft hover:bg-cream"
+                }`}
+              >
+                <Star size={17} />
+                Creator reviews
+
+                {reviewCount > 0 && (
+                  <span className="ml-auto text-xs text-amber-dark font-semibold">
+                    {reviewCount}
+                  </span>
+                )}
+              </button>
+
               <Link
                 to="/cart"
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-ink-soft hover:bg-cream transition-colors"
@@ -587,7 +707,22 @@ export default function CustomerProfile() {
               CONTENT
           ================================================== */}
 
-          <section className="min-w-0">
+          <section className="min-w-0 space-y-4">
+
+            {/* Profile Save Feedback Alert */}
+            {saveSuccess && (
+              <div className="p-4 rounded-2xl bg-green-50 border border-green-200 text-green-700 text-sm flex items-center gap-2">
+                <CheckCircle size={17} />
+                <span>Your profile has been saved and synced with the MakerMatch database.</span>
+              </div>
+            )}
+
+            {saveError && (
+              <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-center gap-2">
+                <AlertCircle size={17} />
+                <span>{saveError}</span>
+              </div>
+            )}
 
             {/* ==================================================
                 EDIT PROFILE
@@ -1295,6 +1430,99 @@ export default function CustomerProfile() {
 
                     )}
 
+                  </div>
+                )}
+
+                {/* ==================================================
+                    CREATOR REVIEWS
+                ================================================== */}
+
+                {activeSection === "reviews" && (
+                  <div className="space-y-6">
+                    {/* REVIEW FORM */}
+                    <ReviewForm
+                      creators={creators}
+                      orders={orders}
+                    />
+
+                    {/* SUBMITTED REVIEWS LIST */}
+                    <div className="bg-white border border-border rounded-3xl p-6 sm:p-8 shadow-sm">
+                      <div className="flex items-start justify-between gap-4 mb-6">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.18em] text-forest font-semibold">
+                            Your Feedback
+                          </p>
+                          <h2 className="font-display text-2xl sm:text-3xl mt-1">
+                            Creator Reviews ({customerReviews.length})
+                          </h2>
+                          <p className="text-sm text-ink-soft mt-1">
+                            Feedback you have given to artisans and makers on MakerMatch.
+                          </p>
+                        </div>
+                      </div>
+
+                      {customerReviews.length > 0 ? (
+                        <div className="space-y-4">
+                          {customerReviews.map((rev) => (
+                            <div
+                              key={rev.id}
+                              className="p-5 rounded-2xl bg-cream/50 border border-border flex flex-col sm:flex-row sm:items-start justify-between gap-4 hover:border-amber/40 transition-colors"
+                            >
+                              <div className="space-y-2 flex-1">
+                                <div className="flex items-center gap-3">
+                                  <Link
+                                    to={`/creator/${rev.creatorId}`}
+                                    className="font-semibold text-sm text-ink hover:text-amber-dark transition-colors"
+                                  >
+                                    {rev.creatorName || `Creator #${rev.creatorId}`}
+                                  </Link>
+                                  <div className="flex items-center gap-0.5">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <Star
+                                        key={star}
+                                        size={14}
+                                        className={
+                                          star <= rev.rating
+                                            ? "fill-amber text-amber"
+                                            : "text-ink-muted/30"
+                                        }
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="text-xs font-semibold text-amber-dark">
+                                    {rev.rating}.0
+                                  </span>
+                                </div>
+
+                                <p className="text-xs text-ink-soft leading-relaxed whitespace-pre-wrap">
+                                  "{rev.review}"
+                                </p>
+
+                                {rev.orderNumber && (
+                                  <p className="text-[11px] text-ink-muted">
+                                    Linked Order: #{rev.orderNumber}
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="text-right shrink-0">
+                                <span className="text-[11px] text-ink-muted">
+                                  {new Date(rev.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <EmptyState
+                          icon={<Star size={24} />}
+                          title="No reviews submitted yet"
+                          text="Rate and review creators you have commissioned or purchased from above."
+                          actionText="Explore Creators"
+                          actionLink="/creators"
+                        />
+                      )}
+                    </div>
                   </div>
                 )}
 

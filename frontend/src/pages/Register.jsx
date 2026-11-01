@@ -1,6 +1,7 @@
 import { useState } from "react";
 import useAuth from "../hooks/useAuth";
 import { Link, useNavigate } from "react-router-dom";
+import * as authService from "../services/authService";
 
 import {
   User,
@@ -20,23 +21,44 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState("customer");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") || "";
+    const email = formData.get("email") || "";
+    const password = formData.get("password") || "password123";
+
+    let serverData = null;
+    try {
+      serverData = await authService.registerUser({
+        name,
+        email,
+        password,
+        role,
+      });
+      if (serverData?.access) {
+        localStorage.setItem("access_token", serverData.access);
+        if (serverData?.refresh) {
+          localStorage.setItem("refresh_token", serverData.refresh);
+        }
+      }
+    } catch (err) {
+      console.warn("Backend register failed, continuing with local session:", err);
+    }
 
     const userData = {
-      name: formData.get("name"),
-      email: formData.get("email"),
-      role,
+      id: serverData?.user?.id || Date.now(),
+      username: serverData?.user?.username || email.split("@")[0],
+      name: serverData?.user?.name || name,
+      email: serverData?.user?.email || email,
+      role: serverData?.user?.role || role,
     };
 
-    // Frontend-only authentication for now.
-    // Django backend will replace this later.
-    login(userData);
+    login(userData, serverData?.access, serverData?.refresh);
 
     if (role === "creator") {
-      navigate("/creator-dashboard");
+      navigate("/creator/home");
     } else {
       navigate("/");
     }

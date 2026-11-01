@@ -13,6 +13,7 @@ import { useEffect } from "react";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 import RoleRoute from "./routes/RoleRoute";
+import ProfileRoute from "./routes/ProfileRoute";
 
 // ======================================================
 // CONTEXT PROVIDERS
@@ -176,8 +177,9 @@ export default function App() {
                           <Route path="/notifications" element={<Notifications />} />
                           <Route path="/complaints" element={<Complaints />} />
                           <Route path="/orders/:id" element={<OrderDetails />} />
-                          <Route path="/profile" element={<CustomerProfile />} />
+                          <Route path="/profile" element={<ProfileRoute />} />
                           <Route path="/customer-profile" element={<CustomerProfile />} />
+                          <Route path="/creator/profile" element={<CreatorProfile />} />
 
                           {/* ==================================================
                               CUSTOMER ONLY ROUTES
