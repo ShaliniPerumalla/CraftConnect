@@ -12,14 +12,19 @@ import {
   Edit2,
   X,
   Check,
+  PlusCircle,
+  Package,
 } from "lucide-react";
 
 import { useCrafts } from "../context/CraftsContext";
 import useAuth from "../hooks/useAuth";
-import { fetchCreatorById, updateCreatorProfile } from "../services/marketplaceService";
+import {
+  fetchCreatorById,
+  fetchCurrentCreatorProfile,
+  updateCreatorProfile,
+} from "../services/marketplaceService";
 
 // Reviews
-import ReviewForm from "../components/Reviews/ReviewForm";
 import RatingSummary from "../components/Reviews/RatingSummary";
 import ReviewList from "../components/Reviews/ReviewList";
 
@@ -29,9 +34,13 @@ export default function CreatorProfile() {
   const { creators, crafts, refreshCrafts } = useCrafts();
 
   const [creatorData, setCreatorData] = useState(() => {
-    return creators?.find((item) => String(item.id) === String(id)) || null;
+    if (id) {
+      return creators?.find((item) => String(item.id) === String(id)) || null;
+    }
+    return null;
   });
 
+  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -45,35 +54,101 @@ export default function CreatorProfile() {
   });
 
   useEffect(() => {
-    const existing = creators?.find((item) => String(item.id) === String(id));
-    if (existing) {
-      setCreatorData(existing);
-      setEditForm({
-        name: existing.name || "",
-        specialty: existing.specialty || "",
-        bio: existing.bio || "",
-        skills: existing.skills || "",
-        location: existing.location || "",
-        avatar: existing.avatar || "",
-        cover: existing.cover || "",
-      });
-    } else {
-      fetchCreatorById(id)
-        .then((data) => {
-          setCreatorData(data);
-          setEditForm({
-            name: data.name || "",
-            specialty: data.specialty || "",
-            bio: data.bio || "",
-            skills: data.skills || "",
-            location: data.location || "",
-            avatar: data.avatar || "",
-            cover: data.cover || "",
+    setLoading(true);
+
+    if (id) {
+      const existing = creators?.find((item) => String(item.id) === String(id));
+      if (existing) {
+        setCreatorData(existing);
+        setEditForm({
+          name: existing.name || "",
+          specialty: existing.specialty || "",
+          bio: existing.bio || "",
+          skills: existing.skills || "",
+          location: existing.location || "",
+          avatar: existing.avatar || "",
+          cover: existing.cover || "",
+        });
+        setLoading(false);
+      } else {
+        fetchCreatorById(id)
+          .then((data) => {
+            setCreatorData(data);
+            setEditForm({
+              name: data.name || "",
+              specialty: data.specialty || "",
+              bio: data.bio || "",
+              skills: data.skills || "",
+              location: data.location || "",
+              avatar: data.avatar || "",
+              cover: data.cover || "",
+            });
+          })
+          .catch(() => {
+            setCreatorData(null);
+          })
+          .finally(() => {
+            setLoading(false);
           });
+      }
+    } else {
+      // Self profile for logged in creator
+      fetchCurrentCreatorProfile()
+        .then((data) => {
+          if (data && data.name) {
+            setCreatorData(data);
+            setEditForm({
+              name: data.name || "",
+              specialty: data.specialty || "",
+              bio: data.bio || "",
+              skills: data.skills || "",
+              location: data.location || "",
+              avatar: data.avatar || "",
+              cover: data.cover || "",
+            });
+          } else {
+            // Fallback to user data if profile not yet completed
+            const fallback = {
+              name: user?.name || user?.username || "Creator",
+              specialty: "Bespoke Handcrafted Artisan",
+              bio: "Passionate creator dedicated to handcrafting heirloom quality items.",
+              skills: "Woodwork, Joinery, Finishing",
+              location: "India",
+              avatar: "",
+              cover: "",
+              rating: 5.0,
+              reviews_count: 0,
+              user_id: user?.id,
+              username: user?.username,
+            };
+            setCreatorData(fallback);
+            setEditForm(fallback);
+          }
         })
-        .catch(() => {});
+        .catch(() => {
+          if (user) {
+            const fallback = {
+              name: user.name || user.username || "Creator",
+              specialty: "Bespoke Handcrafted Artisan",
+              bio: "Passionate creator dedicated to handcrafting heirloom quality items.",
+              skills: "Woodwork, Joinery, Finishing",
+              location: "India",
+              avatar: "",
+              cover: "",
+              rating: 5.0,
+              reviews_count: 0,
+              user_id: user.id,
+              username: user.username,
+            };
+            setCreatorData(fallback);
+            setEditForm(fallback);
+          }
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
-  }, [id, creators]);
+  }, [id, creators, user]);
 
   const creator = creatorData;
 
@@ -154,25 +229,48 @@ export default function CreatorProfile() {
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
 
-        {/* ========================================
-            CREATOR PROFILE CARD
-        ======================================== */}
-
-        <section className="bg-white rounded-[28px] border border-border overflow-hidden shadow-sm">
-
-          {/* Cover image */}
-
-          <div className="relative h-40 sm:h-52 lg:h-60 overflow-hidden">
-
-            <img
-              src={creator.cover}
-              alt=""
-              className="w-full h-full object-cover"
-            />
-
-            <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
-
+        {loading ? (
+          <div className="py-24 text-center">
+            <div className="inline-block animate-spin w-9 h-9 border-4 border-amber border-t-transparent rounded-full mb-3" />
+            <p className="text-sm font-medium text-ink-soft">Loading creator profile...</p>
           </div>
+        ) : !creator ? (
+          <div className="py-24 text-center bg-white rounded-3xl border border-border p-8 shadow-sm">
+            <div className="w-16 h-16 rounded-full bg-cream mx-auto flex items-center justify-center text-ink-muted mb-4">
+              <Package size={28} />
+            </div>
+            <h2 className="font-display text-2xl text-ink font-semibold mb-2">Creator Profile Not Found</h2>
+            <p className="text-sm text-ink-soft max-w-md mx-auto mb-6">
+              The requested creator profile could not be loaded or is not available.
+            </p>
+            <Link
+              to="/creators"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-ink text-white text-sm font-medium hover:bg-amber-dark transition-colors"
+            >
+              Browse All Creators
+            </Link>
+          </div>
+        ) : (
+          <>
+            {/* ========================================
+                CREATOR PROFILE CARD
+            ======================================== */}
+
+            <section className="bg-white rounded-[28px] border border-border overflow-hidden shadow-sm">
+
+              {/* Cover image */}
+
+              <div className="relative h-40 sm:h-52 lg:h-60 overflow-hidden bg-cream-dark">
+
+                <img
+                  src={creator.cover || "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&w=1600&q=80"}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+
+                <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
+
+              </div>
 
 
           {/* Creator information */}
@@ -184,7 +282,7 @@ export default function CreatorProfile() {
               {/* Avatar */}
 
               <img
-                src={creator.avatar}
+                src={creator.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80"}
                 alt={creator.name}
                 className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-[5px] border-white shadow-lg"
               />
@@ -334,33 +432,78 @@ export default function CreatorProfile() {
               </Link>
 
 
-              {/* Explore more crafts */}
+              {isOwner ? (
+                <>
+                  <Link
+                    to="/creator/my-crafts"
+                    className="
+                      inline-flex
+                      items-center
+                      justify-center
+                      gap-2
+                      px-5
+                      py-3
+                      rounded-xl
+                      border
+                      border-border
+                      bg-white
+                      text-ink
+                      text-sm
+                      font-medium
+                      hover:bg-cream
+                      hover:border-amber/40
+                      transition-colors
+                    "
+                  >
+                    <Package size={16} />
+                    My Crafts
+                  </Link>
 
-              <Link
-                to="/explore"
-                className="
-                  inline-flex
-                  items-center
-                  justify-center
-                  gap-2
-                  px-5
-                  py-3
-                  rounded-xl
-                  border
-                  border-border
-                  bg-white
-                  text-ink
-                  text-sm
-                  font-medium
-                  hover:bg-cream
-                  hover:border-amber/40
-                  transition-colors
-                "
-              >
-                Explore Crafts
-
-                <ArrowRight size={16} />
-              </Link>
+                  <Link
+                    to="/creator/add-craft"
+                    className="
+                      inline-flex
+                      items-center
+                      justify-center
+                      gap-2
+                      px-5
+                      py-3
+                      rounded-xl
+                      bg-forest
+                      text-white
+                      text-sm
+                      font-medium
+                      hover:bg-forest/90
+                      transition-colors
+                    "
+                  >
+                    <PlusCircle size={16} />
+                    Add Craft
+                  </Link>
+                </>
+              ) : (
+                <Link
+                  to="/requirements"
+                  className="
+                    inline-flex
+                    items-center
+                    justify-center
+                    gap-2
+                    px-5
+                    py-3
+                    rounded-xl
+                    bg-forest
+                    text-white
+                    text-sm
+                    font-medium
+                    hover:bg-forest/90
+                    transition-colors
+                  "
+                >
+                  Commission Custom Craft
+                  <ArrowRight size={16} />
+                </Link>
+              )}
 
             </div>
 
@@ -562,14 +705,10 @@ export default function CreatorProfile() {
           />
 
 
-          {/* Write a review */}
-
-          <ReviewForm
-            creatorId={creator.id}
-            creatorName={creator.name}
-          />
-
         </section>
+
+          </>
+        )}
 
       </main>
 

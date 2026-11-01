@@ -45,14 +45,20 @@ export default function Login() {
       console.warn("Backend login failed, continuing with local session:", err);
     }
 
-    login({
+    const loggedUser = {
+      id: serverData?.user?.id || Date.now(),
+      username: serverData?.user?.username || formData.email.split('@')[0],
+      email: serverData?.user?.email || formData.email,
+      role: serverData?.user?.role || role,
       name: serverData?.user?.name || formData.email.split('@')[0] || 'User',
-      email: formData.email,
-      role,
-    });
+    };
+
+    login(loggedUser, serverData?.access, serverData?.refresh);
 
     if (role === 'creator') {
       navigate('/creator/home');
+    } else if (role === 'admin') {
+      navigate('/admin');
     } else {
       navigate('/');
     }

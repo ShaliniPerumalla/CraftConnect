@@ -14,6 +14,10 @@ urlpatterns = [
     # Admin Interface
     path('admin/', admin.site.urls),
 
+    # SimpleJWT token endpoints (used by tests and JWT clients)
+    path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+
     # Authentication
     path("api/auth/", include("accounts.urls")),
 

@@ -2,20 +2,21 @@ import {
   createContext,
   useContext,
   useEffect,
-  useMemo,
   useState,
   useCallback,
 } from "react";
 import {
   fetchReviews as apiFetchReviews,
   createReview as apiCreateReview,
-  fetchCreatorReviewSummary as apiFetchCreatorReviewSummary,
 } from "../services/member4Service";
+import useAuth from "../hooks/useAuth";
 
 const ReviewContext = createContext(null);
 const STORAGE_KEY = "craftconnect_reviews";
 
 export function ReviewProvider({ children }) {
+  const { user } = useAuth() || {};
+
   const [reviews, setReviews] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -46,16 +47,18 @@ export function ReviewProvider({ children }) {
           grouped[cId].push({
             id: String(r.id),
             creatorId: cId,
+            creatorName: r.creator?.name || r.creator?.username || `Creator #${cId}`,
+            customerId: r.customer?.id || r.customer,
+            customerUsername: r.customer?.username,
             customerName: r.customer?.name || r.customer?.username || "Verified Customer",
-            rating: r.rating,
+            rating: Number(r.rating || 5),
             review: r.comment,
             orderNumber: r.order_number,
             orderId: r.order,
-            createdAt: new Date(r.created_at).getTime(),
+            createdAt: r.created_at ? new Date(r.created_at).getTime() : Date.now(),
           });
         });
         setReviews((prev) => ({ ...prev, ...grouped }));
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...reviews, ...grouped }));
       }
     } catch (err) {
       console.warn("apiFetchReviews failed, using cached reviews:", err);
@@ -81,6 +84,25 @@ export function ReviewProvider({ children }) {
     return reviews[creatorId] || reviews[String(creatorId)] || [];
   }
 
+  function getCustomerReviews(filterUser = user) {
+    const list = [];
+    Object.entries(reviews || {}).forEach(([creatorId, reviewArr]) => {
+      if (Array.isArray(reviewArr)) {
+        reviewArr.forEach((r) => {
+          if (
+            (filterUser?.id && (r.customerId === filterUser.id || r.customer?.id === filterUser.id)) ||
+            (filterUser?.username && (r.customerUsername === filterUser.username || r.customerName === filterUser.username)) ||
+            r.customerName === "You" ||
+            (filterUser?.name && r.customerName === filterUser.name)
+          ) {
+            list.push({ ...r, creatorId });
+          }
+        });
+      }
+    });
+    return list;
+  }
+
   async function addReview({
     creatorId,
     orderId,
@@ -91,24 +113,39 @@ export function ReviewProvider({ children }) {
     const trimmedReview = (review || "").trim();
     if (!rating || !trimmedReview) return false;
 
-    try {
-      if (orderId) {
-        await apiCreateReview({
-          order: orderId,
-          rating: Number(rating),
-          comment: trimmedReview,
-        });
+    let apiRes = null;
+    const token = localStorage.getItem("access_token");
+
+    if (token) {
+      try {
+        if (orderId) {
+          apiRes = await apiCreateReview({
+            order: orderId,
+            rating: Number(rating),
+            comment: trimmedReview,
+          });
+        } else if (creatorId) {
+          apiRes = await apiCreateReview({
+            creator_id: creatorId,
+            rating: Number(rating),
+            comment: trimmedReview,
+          });
+        }
+      } catch (err) {
+        console.error("apiCreateReview error:", err?.response?.data || err.message);
+        throw err;
       }
-    } catch (err) {
-      console.warn("apiCreateReview failed, recording review locally:", err);
     }
 
-    const cId = String(creatorId || "creator-1");
+    const cId = String(creatorId || (apiRes && apiRes.creator) || "creator-1");
     const newReview = {
-      id: `review-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      id: apiRes?.id ? String(apiRes.id) : `review-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       creatorId: cId,
+      creatorName: apiRes?.creator_name || `Creator #${cId}`,
       orderId,
-      customerName,
+      customerId: user?.id,
+      customerUsername: user?.username,
+      customerName: user?.name || user?.username || customerName,
       rating: Number(rating),
       review: trimmedReview,
       createdAt: Date.now(),
@@ -162,6 +199,7 @@ export function ReviewProvider({ children }) {
     refreshReviews: loadReviews,
 
     getCreatorReviews,
+    getCustomerReviews,
     addReview,
     deleteReview,
     getRatingSummary,

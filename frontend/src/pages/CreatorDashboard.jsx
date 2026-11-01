@@ -38,8 +38,13 @@ export default function CreatorDashboard() {
           c.name === user.name
       );
       if (match) return match;
+      return {
+        name: user.name || user.username || "Creator",
+        username: user.username,
+        id: user.id,
+      };
     }
-    return creators?.[0] || { name: user?.name || "Creator", id: "c1" };
+    return { name: "Creator", id: "c1" };
   });
 
   useEffect(() => {

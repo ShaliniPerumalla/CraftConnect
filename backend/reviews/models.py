@@ -6,7 +6,9 @@ from orders.models import Order
 class Review(models.Model):
     order = models.OneToOneField(
         Order,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='review'
     )
     customer = models.ForeignKey(

@@ -787,3 +787,6 @@ export function useRequirementQuotation() {
   }
   return context;
 }
+
+export const useRequirements = useRequirementQuotation;
+
